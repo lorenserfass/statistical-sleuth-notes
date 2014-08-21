@@ -1,0 +1,159 @@
+---
+title: 'Chapter 2: Inference using t-Distributions'
+author: "Loren"
+date: "08/17/2014"
+output:
+   html_document:
+      toc: true
+      theme: flatly
+      highlight: tango
+---
+
+## Bumpus sparrows
+```{r echo=F}
+case0201 <- read.csv('ascii/case0201.csv')
+library(ggplot2)
+```
+
+We have `r nrow(case0201)` sparrows collected after a storm.
+Some perished and some survived.
+(Don't ask me how the survivors were collected).
+The length of each bird's HUMERUS was measured.
+```{r echo=F}
+table(case0201$STATUS)
+# require(aplpack)
+# with(case0201, stem.leaf.backback(HUMERUS[STATUS=='SURVIVED'],
+#                                  HUMERUS[STATUS=='PERISHED'], 1))
+qplot(STATUS, HUMERUS, data=case0201, geom="boxplot")
+```
+
+The two groups have about the same spread.
+```{r}
+(bt <- t.test(HUMERUS ~ STATUS, data=case0201))
+```
+No convincing evidence of a difference (p.val = `r bt$p.value`), and removing the outliers
+would not increase the significance either.
+
+## Schizophrenic Identical Twins
+```{r echo=F}
+case0202 <- read.csv('ascii/case0202.csv')
+```
+We have `r nrow(case0202)` pairs of identical twins.
+```{r echo=F}
+# unnecessary:
+require(reshape2)
+case0202$twinnum <- 1:nrow(case0202)
+long <- melt(case0202, id.vars='twinnum',
+             variable_name = 'status',
+             value.name = 'volume')
+```
+In almost all pairs, the the unaffected twin has higher volume:
+```{r echo=F}
+qplot(UNAFFECT - AFFECTED, data=case0202)
+```
+```{r}
+(test <- with(case0202, t.test(UNAFFECT, AFFECTED, paired=T)))
+```
+We have a significant difference (p-val = `r test$p.value`) in brain volume,
+with an average difference of `r test$estimate`.  The 95% confidence interval
+for the difference is `r test$conf.int[1]` to `r test$conf.int[2]`.
+
+# Conceptual Exercises
+
+1. If the dead birds were measured while they were dead, the experimenter could have been biased.
+2. Because it's not what we're interested in?
+3. "Shape of a histogram of the sample" -- false.  The histogram will be shaped like the population.
+4. True
+
+# Computational Exercises
+
+## 12. Marijuana during pregnancy
+```{r}
+diff <- 280 # users - nonusers (birth weight)
+se.diff <- 46.66
+deg.free <- 1095
+t.stat <- (diff - 0) / se.diff
+```
+a) 95% confidence interval for the difference between means:
+```{r}
+half.interval <- qt(.975,deg.free) * se.diff
+c(-half.interval, half.interval) + diff
+```
+b) 90% confidence interval for the difference between means:
+```{r}
+half.interval <- qt(.95,deg.free) * se.diff
+c(-half.interval, half.interval) + diff
+```
+c) 2-sided p-value for null hypothesis:
+```{r}
+2 * pt(-t.stat, deg.free)
+```
+
+## 13. Fish Oil and Blood Pressure
+```{r echo=F}
+ex0213 <- read.csv('ascii/ex0112.csv')
+```
+a) Group averages of BP:
+```{r echo=F}
+(aves <- with(ex0213, by(BP, DIET, FUN=mean)))
+```
+b) pooled estimate of standard deviation:
+```{r}
+(sizes <- table(ex0213$DIET))                # the group sizes
+(sds <- with(ex0213, by(BP, DIET, FUN=sd)))  # the group standard deviations
+(sp <- sqrt(sum((sizes - 1) * sds^2) / (sum(sizes -1)))) # the pooled standard deviation
+```
+c) SE(mean1 - mean2):
+```{r}
+(se <- sp * sqrt(sum(1/sizes)))
+```
+d) d.f. associated with sp is `r (my.df <- sum(sizes-1))`. The 97.5-th percentile of
+the t-dist with this degree of freedom is `r qt(.975,my.df)`.
+e) 
+
+# Data Problems
+
+## 21. Bumpus sparrow weight
+
+```{r echo=F}
+ex0221 <- read.csv('ascii/ex0221.csv')
+```
+We have the weights of `r nrow(ex0221)` sparrows, and whether they survived or not:
+```{r echo=F}
+head(ex0221)
+```
+Group sizes, boxplot, and t-test:
+```{r echo=F}
+summary(ex0221$STATUS)
+qplot(STATUS, WEIGHT, data=ex0221, geom='boxplot') + geom_point()
+t.test(WEIGHT ~ STATUS, data=ex0221)
+```
+T-test without "outlier":
+```{r echo=F}
+heaviest <- which.max(ex0221$WEIGHT)
+t.test(WEIGHT ~ STATUS, data=ex0221[-heaviest,])
+```
+Whether the difference is "significant" (at the 0.05 level) depends on that
+one data point, so it would be a very weak conclusion.
+
+## 23. Speed limits and traffic fatalities
+```{r echo=F}
+ex0223 <- read.csv('ascii/ex0223.csv')
+```
+For each state, we have whether it raised its speed limit (over 55) in 1996,
+and the percentage change in traffic fatalities from 1995 to 1996.
+```{r echo=F}
+head(ex0223)
+```
+```{r echo=F}
+(table(ex0223$INCREASE))
+qplot(FATALITIESCHANGE, data=ex0223, binwidth=10) + facet_grid(facets=INCREASE ~ .)
+```
+
+So, we have most of the states increasing their speed limit, and
+the change in fatalities in seems to be higher among states that increased their
+speed limit.  Yes, we have a significant t-test:
+```{r echo=F}
+(tt <- t.test(FATALITIESCHANGE ~ INCREASE, data=ex0223))
+```
+The confidence interval is (`r tt$conf.int`).

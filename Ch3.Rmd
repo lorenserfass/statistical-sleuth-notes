@@ -1,0 +1,56 @@
+---
+title: 'Chapter 3: A Closer Look at Assumptions'
+author: "Loren"
+date: "08/18/2014"
+output:
+   html_document:
+      toc: true
+      theme: flatly
+      highlight: tango
+---
+
+## Cloud Seeding
+
+```{r echo =F}
+c0301 <- read.csv('ascii/case0301.csv')
+require(ggplot2)
+```
+On `r nrow(c0301)` days, clouds were either seeded or not (randomly decided), and rainfall was recorded.
+There were an equal number of days in each treatment group.
+```{r echo=F}
+table(c0301$TREATMENT)
+```
+
+The data are skewed:
+```{r echo=F}
+qplot(TREATMENT, RAINFALL, data=c0301, geom='point')
+```
+
+A log transform seems to give normally-distributed data of approximately equal spreads:
+```{r echo=F}
+qplot(TREATMENT, log(RAINFALL), data=c0301, geom='boxplot') + geom_point()
+```
+```{r echo=F}
+qplot(log(RAINFALL), data=c0301, binwidth=1) + facet_grid(facets=TREATMENT ~ .)
+```
+
+So a t-test is appropriate:
+```{r echo=F}
+(tt <- t.test(log(RAINFALL) ~ TREATMENT, data=c0301))
+diff <- tt$estimate[1] - tt$estimate[2]
+names(diff) <- NULL
+```
+The additive effect on log(RAINFALL) (from UNSEEDED to SEEDED) is `r diff`.  So the multiplicative effect on RAINFALL itself is `r exp(diff)`.  The 95% confidence interval for the ratio of SEEDED to UNSEEDED is `r exp(tt$conf.int)`.
+
+## Agent orange
+```{r echo = F}
+c0302 <- read.csv('ascii/case0302.csv')
+```
+```{r}
+qplot(VETERAN, DIOXIN, data=c0302, position=position_jitter(w=0.1), alpha=0.1) +
+   geom_boxplot(alpha=0.5)
+```
+They really seem to have approximately the same standard deviation.
+There are zeroes in the dataset, so taking a log does not make sense.
+(And list other reasons too...)  The VIETNAM group is much larger, so
+we should expect a larger range in that group.
