@@ -22,11 +22,13 @@ table(c0301$TREATMENT)
 ```
 
 The data are skewed:
+
 ```{r echo=F}
 qplot(TREATMENT, RAINFALL, data=c0301, geom='point')
 ```
 
 A log transform seems to give normally-distributed data of approximately equal spreads:
+
 ```{r echo=F}
 qplot(TREATMENT, log(RAINFALL), data=c0301, geom='boxplot') + geom_point()
 ```
@@ -40,6 +42,7 @@ So a t-test is appropriate:
 diff <- tt$estimate[1] - tt$estimate[2]
 names(diff) <- NULL
 ```
+
 The additive effect on log(RAINFALL) (from UNSEEDED to SEEDED) is `r diff`.  So the multiplicative effect on RAINFALL itself is `r exp(diff)`.  The 95% confidence interval for the ratio of SEEDED to UNSEEDED is `r exp(tt$conf.int)`.
 
 ## Agent orange
@@ -50,7 +53,186 @@ c0302 <- read.csv('ascii/case0302.csv')
 qplot(VETERAN, DIOXIN, data=c0302, position=position_jitter(w=0.1), alpha=0.1) +
    geom_boxplot(alpha=0.5)
 ```
+
 They really seem to have approximately the same standard deviation.
 There are zeroes in the dataset, so taking a log does not make sense.
 (And list other reasons too...)  The VIETNAM group is much larger, so
 we should expect a larger range in that group.
+
+TODO: continue Agent Orange
+
+# Conceptual Exercises
+
+## 20 Means, Medians, Logs, Ratios
+
+```{r echo=F}
+ex0320 <- data.frame(college=c('a','b','c','d','e'),
+                     outofstate=c(3000,8000,30000,32000,40000),
+                     instate=c(1000,4000,5000,8000,40000))
+ex0320
+```
+
+a)
+The average in-state tuition is `r mean(ex0320$instate)`.
+The average of log-instate is `r mean(log(ex0320$instate))`.
+The log of the average instate is `r log(mean(ex0320$instate))`.
+
+b)
+These two are the same:
+```{r}
+median(log(ex0320$instate))
+log(median(ex0320$instate))
+```
+
+The median of the ratios is not the same as the ratio of the medians:
+
+```{r}
+median(ex0320$outofstate / ex0320$instate)
+median(ex0320$outofstate) / median(ex0320$instate)
+```
+
+# Computational Exercises
+
+## 21. Umpires and Life-Expectancy
+
+```{r echo=F}
+ex0321 <- read.csv('ascii/ex0321.csv')
+```
+
+The study asks whether umpires live shorter than expected.  `r sum(ex0321$censored == 1)` of the umpires in the data
+had not died at the time of the study, so their lifelength was not known.
+The original study 'censored' their data.  A t-test on censored data looks like this:
+
+```{r}
+with(ex0321[ ex0321$censored == 0,], t.test(expected - lifelength))
+```
+
+TODO: continue this.
+
+
+```{r}
+ggplot(ex0321, aes(expected, lifelength, color=factor(censored))) + geom_point(alpha=0.5) +
+   geom_abline(intercept=0,slope=1) + theme_minimal()
+```
+
+
+## 22. Voltage and Insulating Fluid
+
+```{r echo=F}
+ex0322 <- data.frame(kV=factor(c(26,26,26,28,28,28,28,28)),
+                     time=c(5.79,1579.52,2323.7,68.8,108.29,110.29,426.07,1067.6))
+ex0322
+```
+
+TODO: continue this
+
+## 23. Solar Radiation and Skin Cancer
+
+```{r}
+ex0323 <- read.csv('ascii/ex0323.csv')
+names(ex0323) <- tolower(names(ex0323))
+head(ex0323)
+```
+
+a) TODO
+b) In the following plot, high-sunspot years are almost all above the regression line. Low-sunspot years are almost all below the line.  There is an upward trend in both groups.  Does this mean that the observations aren't independent?  Would this make the test sensitive to the choice of what years to start and end at?
+
+```{r echo=F}
+ggplot(ex0323, aes(year, rate)) + geom_point(aes(color=sunspot)) + geom_smooth(method='lm',se=F,color='black') + theme_minimal()
+```
+
+## 24. Sex Discrimination revisited with logs
+
+The data don't look skewed, so I'm not sure why they're having me do this.
+Without log:
+
+```{r echo=F}
+ex0324 <- read.csv('ascii/case0102.csv')
+names(ex0324) <- tolower(names(ex0324))
+ggplot(ex0324, aes(sex, salary)) + geom_boxplot()
+```
+
+Now logged:
+
+```{r echo=F}
+ggplot(ex0324, aes(sex, log(salary))) + geom_boxplot()
+```
+
+```{r echo=F}
+(t <- t.test(log(salary) ~ sex, ex0324))
+```
+
+P-value = `r t$p.val`.  The 95% confidence interval for the *difference in logs*
+is (`r t$conf.int`).  The 95% confidence interval for the *ratio of medians* is
+(`r exp(t$conf.int)`).
+
+## 25. Agent orange and outliers
+
+```{r echo=F}
+ex0325 <- read.csv('ascii/case0302.csv')
+names(ex0325) <- tolower(names(ex0325))
+two.largest <- order(ex0325$dioxin, decreasing = T)[1:2]
+```
+
+The one-sided p-value of a t-test, without removing any points or transforming the data,
+is `r t.test(dioxin ~ veteran, ex0325, alternative = 'less', var.equal=T)$p.val`.  After removing the highest two points, the p-value is
+`r t.test(dioxin ~ veteran, ex0325[-two.largest,], alternative = 'less', var.equal=T)$p.val`.
+
+## 26. Agent orange, log-transformed
+
+Here are boxplots of log(dioxin + 0.5):
+
+```{r echo=F}
+qplot(veteran, log(dioxin + 0.5), data=ex0325, geom=c('jitter', 'boxplot'))
+t <- t.test(log(dioxin + 0.5) ~ veteran, data=ex0325, var.equal=T)
+```
+
+The 2-sided p-value of a t-test on the transformed variable is `r t$p.val`.
+A confidence interval (approximate because of the added 0.5) for the ratio of medians
+is (`r exp(t$conf.int)`).  That's median(other)/median(vietnam).
+
+## 27. TODO
+
+
+## 28. TODO
+
+
+## 29. TODO
+
+
+## 30. Cloud seeding: multiplicative vs. additive effects
+
+```{r echo=F}
+ex0330 <- read.csv('ascii/case0301.csv')
+names(ex0330) <- tolower(names(ex0330))
+```
+
+Adding 100, 200, 300, and 400 to the unseeded rainfalls, and plotting the result:
+
+```{r echo=F}
+us <- with(ex0330, rainfall[ treatment == 'UNSEEDED' ])
+require(reshape2)
+additive <- melt(data.frame(a=us, b=us+100, c=us+200, d=us+300, e=us+400),
+                 variable.name='group',
+                 value.name='rainfall')
+qplot(group, rainfall, data=additive, geom=c('boxplot'))
+```
+
+Multiplying unseeded rainfalls by 2, 3, 4, and 5:
+
+```{r echo=F}
+mult <- melt(data.frame(a=us, b=us*2, c=us*3, d=us*4, e=us*5),
+                 variable.name='group',
+                 value.name='rainfall')
+qplot(group, rainfall, data=mult, geom=c('boxplot'))
+```
+
+The original data:
+
+```{r echo=F}
+qplot(treatment, rainfall, data=ex0330, geom='boxplot')
+```
+
+Viewed in the context of these graphs, the effect 'looks' multiplicative.
+
+## 31. TODO

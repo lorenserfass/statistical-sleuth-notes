@@ -49,7 +49,7 @@ long <- melt(case0202, id.vars='twinnum',
 ```
 In almost all pairs, the the unaffected twin has higher volume:
 ```{r echo=F}
-qplot(UNAFFECT - AFFECTED, data=case0202)
+qplot(UNAFFECT - AFFECTED, data=case0202, binwidth=.125)
 ```
 ```{r}
 (test <- with(case0202, t.test(UNAFFECT, AFFECTED, paired=T)))
