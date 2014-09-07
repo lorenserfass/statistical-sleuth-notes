@@ -115,7 +115,8 @@ Plot of the data:
 
 ```{r echo=F, fig.width=7, fig.height=1.5}
 ex0419 <- sleuth.read('ascii/case0201.csv')
-ggplot(ex0419, aes(status, humerus)) + geom_boxplot() + coord_flip()
+ggplot(ex0419, aes(status, humerus)) + geom_boxplot() +
+   theme(axis.title.y=element_blank()) + ylab("Humerus length (in.)") + coord_flip()
 ```
 
 R's default rank-sum test uses a continuity correction.  It gives a warning that an exact p-value cannot be computed when there are ties:
@@ -148,12 +149,25 @@ Trauma patients: `r with(ex0420, sort(expenditure[group=='trauma']))`
 Non-trauma patients: `r with(ex0420, sort(expenditure[group=='nontrauma']))`
 
 ```{r echo=F, fig.width=7, fig.height=1.5}
-ggplot(ex0420, aes(expenditure, group)) + geom_point()
+ggplot(ex0420, aes(group, expenditure)) +
+   geom_dotplot(binaxis='y', stackdir='center', dotsize=1.5, binwidth=.1) +
+   theme(axis.title.y=element_blank()) +
+   ylab("Metabolic expenditure (kcal/kg/day)") +
+   coord_flip()
 ```
 
 ```{r}
 ex0420$ranks <- rank(ex0420$expenditure)
 ```
+
+```{r echo=F, fig.width=7, fig.height=1.5}
+ggplot(ex0420, aes(group, ranks)) +
+   geom_dotplot(binaxis='y',stackdir='center', dotsize=.3) +
+   theme(axis.title.y=element_blank()) + scale_y_discrete(breaks=1:15) +
+   ylab("Rank of metabolic expenditure") +
+   coord_flip()   
+```
+
 Rank sum for trauma group: `r (rank.sum.trauma <- with(ex0420, sum(ranks[group == 'trauma'])))`
 
 Mean of all ranks: `r (mean.ranks <- mean(ex0420$ranks))`
@@ -168,8 +182,77 @@ Theoretical Sd of trauma rank-sum: `r (sd.T <- sd.ranks * sqrt( prod(sizes) / su
 
 Z-statistic: `r (z <- (rank.sum.trauma - mean.T) / sd.T)`
 
-One-sided p-value: `r (p <- pnorm(z, lower.tail=F))`
+**One-sided p-value**: `r (p <- pnorm(z, lower.tail=F))`
 
-Check: R's rank-sum test (with continuity correction). p-value = 
-`r wilcox.test(expenditure ~ group, data=ex0420, alternative = 'less')$p.value`
+## 21. Trauma data: Checking exercise 20 using R's wilcox.test
 
+```{r}
+(wt <- wilcox.test(expenditure ~ group, data=ex0420, alternative = 'less'))
+```
+
+**Check: p-value** (with continuity correction) = `r wt$p.value`
+
+## 22. Trauma data: 95% confidence interval for the difference of population medians
+
+The set-up.  A function that tests whether a value is included in the interval:
+
+```{r}
+trauma <- with(ex0420, expenditure[group == 'trauma'])
+nontrauma <- with(ex0420, expenditure[group == 'nontrauma'])
+
+included <- function(delta) {   
+   # 2-sided p-value, see page 93:
+   wilcox.test(trauma, nontrauma + delta)$p.value > .05
+}
+included <- Vectorize(included) # Can do it for multiple test-deltas at once
+```
+
+Median(trauma) - Median(nontrauma) = `r median(trauma) - median(nontrauma) # 4.9`.
+
+After some trial and error to find the endpoints:
+
+```{r}
+included(c(1.9, 1.91, 16.7, 16.71))
+```
+
+So the 95% confidence interval is approximately (1.91, 16.7).
+
+# 23. Motivation and Creativity: randomization test compared to t-test
+
+```{r echo=F, fig.width=7, fig.height=1.5}
+ex0423 <- sleuth.read('ascii/case0101.csv')
+qplot(treatment, score, data=ex0423, geom='boxplot') +
+   theme(axis.title.y=element_blank()) + coord_flip()
+```
+
+Group sizes:
+
+```{r echo=F}
+ex.size <- sum(ex0423$treatment == 'EXTRINSIC')
+table(ex0423$treatment)
+```
+
+
+A randomization test:
+
+```{r fig.width=6, fig.height=3}
+n <- 10000
+
+mean.diffs <- numeric(n)
+for (i in 1:n) {
+   ex.ind <- sample(47, 23)
+   mean.diffs[i] <- with(ex0423, mean(score[-ex.ind]) - mean(score[ex.ind]))
+}
+# The observed difference in means:
+(in.minus.ex <- with(ex0423, mean(score[treatment=='INTRINSIC']) - mean(score[treatment=='EXTRINSIC'])))
+# plot of the simulated differences in means:
+hist(mean.diffs)
+abline(v=c(in.minus.ex, -in.minus.ex), col='red')
+```
+
+Out of `r n` resamplings, only `r (blah <- sum(abs(mean.diffs) >= in.minus.ex))` gave
+rise to a difference of means as extreme as the observed one, giving a 2-sided p-value
+of `r blah / n`.
+
+For comparison, the p-value of a t-test is
+`r t.test(score ~ treatment, data=ex0423, var.equal=T)$p.value`.
