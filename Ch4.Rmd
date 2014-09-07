@@ -1,0 +1,175 @@
+---
+title: 'Chapter 4: Alternatives to the t-Tools'
+author: "Loren"
+date: "09/06/2014"
+output:
+   html_document:
+      toc: true
+---
+
+```{r echo=F}
+library(knitr)
+opts_chunk$set(warning=FALSE, prompt=FALSE, message=FALSE)
+library(ggplot2)
+theme_set(new = theme_minimal())
+library(plyr)
+```
+
+```{r echo=F}
+# upper-case column names annoy me
+sleuth.read <- function(x) {
+   d <- read.csv(x)
+   names(d) <- tolower(names(d))
+   d
+}
+```
+
+# Conceptual Exercises
+
+
+# Computational Exercises
+
+## 14. O-Ring Study
+
+In warm temperatures, there were 17 launches with 0 incidents, 2 launches with one incident, etc.
+
+```{r echo=F}
+ex0414 <- sleuth.read('ascii/case0401.csv')
+# library(aplpack)
+# with(ex0414, stem.leaf.backback(incidents[launch == 'COOL'], incidents[launch == 'WARM']))
+with(ex0414, by(incidents, launch, FUN=function(x) { table(factor(x)) }))
+# qplot(factor(incidents), data=ex0414, facets = launch ~ .)
+```
+
+```{r echo=F}
+ttest <- t.test(incidents ~ launch, data=ex0414, var.equal=T)
+```
+
+A t-test on the data gives a p-value of `r ttest$p.val`, whereas the exact p-value
+(from a permutation test) is 0.00988.
+
+## 15. Artificial data: permutation test on differences of group means
+
+```{r}
+score <- c(1,5,4,8,9)
+mean.diff <- mean(score[3:5]) - mean(score[1:2])
+mean.diffs <- sort(aaply(combn(1:5,2), 2, function(x) { mean(score[-x]) - mean(score[x]) }))
+names(mean.diffs) <- NULL
+```
+
+Group 1: 1, 5
+
+Group 2: 4, 8, 9
+
+Mean(group2) - Mean(group1) = `r mean.diff`.
+
+The distribution of all such mean differences is [`r mean.diffs`].
+
+`r (n <- sum(mean.diffs >= mean.diff))` of these are larger than or equal to `r mean.diff`,
+for a one-sided p-value of `r n / length(mean.diffs)`.
+
+## 16. More artificial data: permutation distribution of difference in sample averages
+
+Group 1: 5, 7, 12
+
+Group 2: 4, 6
+
+```{r echo=F}
+ex0416 <- c(5,7,12,4,6)
+mean.diff <- mean(ex0416[1:3]) - mean(ex0416[4:5]) # group 1 minus group 2
+dist <- sort(aaply(combn(1:5, 3), 2, function(x) { mean(ex0416[x]) - mean(ex0416[-x]) }))
+names(dist) <- NULL
+```
+
+Mean(group1) - Mean(group2) = `r mean.diff`.
+
+The distribution of such mean
+differences, from all regroupings, is [`r dist`].
+
+`r (num <- sum(abs(dist) >= mean.diff))` of these mean differences are equal to or more extreme
+than `r mean.diff`, for a 2-sided p-value of `r num / length(dist)`.
+
+## 18. A rank-sum test
+
+The data:
+
+Ranks 3,5, and 6 are in the treatment group.  1, 2, and 4 are in the control group.
+The sum of ranks in the treatment group is `r sum(3,5,6)`.
+
+Here is the distribution of possible rank sums for the treatment group, based on all permutations
+of the ranks:
+
+```{r echo=F, fig.width=4, fig.height=2}
+sum.trt <- sum(3,5,6)
+rank.sums <- aaply(combn(1:6, 3), 2, sum)
+qplot(rank.sums, data=data.frame(rank.sums)) +
+   scale_x_continuous(breaks=6:15)
+num.bigger <- sum(rank.sums >= sum.trt)
+```
+
+The graph shows that there are only `r num.bigger` rank sums bigger than or equal to `r sum.trt`.
+
+## 19. Bumpus with rank-sum
+
+Plot of the data:
+
+```{r echo=F, fig.width=7, fig.height=1.5}
+ex0419 <- sleuth.read('ascii/case0201.csv')
+ggplot(ex0419, aes(status, humerus)) + geom_boxplot() + coord_flip()
+```
+
+R's default rank-sum test uses a continuity correction.  It gives a warning that an exact p-value cannot be computed when there are ties:
+
+```{r warning=T}
+(wt <- wilcox.test(humerus ~ status, data=ex0419))
+```
+
+The reported 2-sided p-value, `r wt$p.value`, is much higher than
+`r t.test(humerus ~ status, data=ex0419, var.equal=T)$p.value`, the value from a t-test,
+but about the same as the p-value from a t-test in which the smallest observation has been
+removed:
+`r t.test(humerus ~ status, data=ex0419[-which.min(ex0419$humerus),])$p.value`.
+TODO: interpret this.
+
+## 20. Trauma and Metabolic Expenditure: rank-sum test "by hand"
+
+```{r echo=F}
+group <- c(rep('nontrauma', 8), rep('trauma', 7))
+expenditure <- c(20.1, 22.9, 18.8, 20.9, 20.9, 22.7, 21.4, 20,
+                           38.5, 25.8, 22, 23, 37.6, 30, 24.5)
+ex0420 <- data.frame(expenditure, group)
+ex0420 <- ex0420[order(ex0420$expenditure),]
+```
+
+<u>Metabolic expenditures (kcal/kg/day)</u>
+
+Trauma patients: `r with(ex0420, sort(expenditure[group=='trauma']))`
+
+Non-trauma patients: `r with(ex0420, sort(expenditure[group=='nontrauma']))`
+
+```{r echo=F, fig.width=7, fig.height=1.5}
+ggplot(ex0420, aes(expenditure, group)) + geom_point()
+```
+
+```{r}
+ex0420$ranks <- rank(ex0420$expenditure)
+```
+Rank sum for trauma group: `r (rank.sum.trauma <- with(ex0420, sum(ranks[group == 'trauma'])))`
+
+Mean of all ranks: `r (mean.ranks <- mean(ex0420$ranks))`
+
+Sd of all ranks: `r (sd.ranks <- sd(ex0420$ranks))`
+
+Group sizes: `r (sizes <- table(ex0420$group))`
+
+Theoretical mean of trauma rank-sum: `r (mean.T <- mean.ranks * sizes['trauma'])`
+
+Theoretical Sd of trauma rank-sum: `r (sd.T <- sd.ranks * sqrt( prod(sizes) / sum(sizes) ))`
+
+Z-statistic: `r (z <- (rank.sum.trauma - mean.T) / sd.T)`
+
+One-sided p-value: `r (p <- pnorm(z, lower.tail=F))`
+
+Check: R's rank-sum test (with continuity correction). p-value = 
+`r wilcox.test(expenditure ~ group, data=ex0420, alternative = 'less')$p.value`
+
