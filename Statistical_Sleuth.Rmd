@@ -1,0 +1,19 @@
+---
+title: "Statistical Sleuth"
+author: "Loren"
+date: "09/01/2014"
+output: html_document
+---
+
+This project comes out of a dark place.  I am in a dead-end job, and
+the only satisfying thing is learning in my spare time.  So I gave myself
+a project to work through all the exercises in The Statistical Sleuth using
+the R language.  The version history of these documents is posted at github.
+
+Links to chapters:
+
+* Chapter 1: Drawing Statistical Conclusions
+* [Chapter 2: Inference using t-Distributions](Ch2.html)
+* [Chapter 3: A Closer Look at Assumptions](Ch3.html)
+* Chapter 4: Alternatives to the t-Tools
+* [Chapter 5: Comparisons Among Several Samples](Ch5.html)
