@@ -217,7 +217,7 @@ included(c(1.9, 1.91, 16.7, 16.71))
 
 So the 95% confidence interval is approximately (1.91, 16.7).
 
-# 23. Motivation and Creativity: randomization test compared to t-test
+## 23. Motivation and Creativity: randomization test compared to t-test
 
 ```{r echo=F, fig.width=7, fig.height=1.5}
 ex0423 <- sleuth.read('ascii/case0101.csv')
@@ -235,7 +235,7 @@ table(ex0423$treatment)
 
 A randomization test:
 
-```{r fig.width=6, fig.height=3}
+```{r}
 n <- 10000
 
 mean.diffs <- numeric(n)
@@ -243,9 +243,17 @@ for (i in 1:n) {
    ex.ind <- sample(47, 23)
    mean.diffs[i] <- with(ex0423, mean(score[-ex.ind]) - mean(score[ex.ind]))
 }
-# The observed difference in means:
+```
+
+The observed difference in means:
+
+```{r echo=F}
 (in.minus.ex <- with(ex0423, mean(score[treatment=='INTRINSIC']) - mean(score[treatment=='EXTRINSIC'])))
-# plot of the simulated differences in means:
+```
+
+Plot of the simulated differences in means:
+
+```{r echo=F, fig.width=6, fig.height=3}
 hist(mean.diffs)
 abline(v=c(in.minus.ex, -in.minus.ex), col='red')
 ```
@@ -256,3 +264,106 @@ of `r blah / n`.
 
 For comparison, the p-value of a t-test is
 `r t.test(score ~ treatment, data=ex0423, var.equal=T)$p.value`.
+
+## 24. Creativity and Motivation: 95% confidence interval using rank-sum procedure
+
+```{r}
+intrinsic <- with(ex0423, score[treatment == 'INTRINSIC'])
+extrinsic <- with(ex0423, score[treatment == 'EXTRINSIC'])
+
+included <- function(delta) {   
+   # 2-sided p-value, see page 93:
+   wilcox.test(intrinsic, extrinsic + delta)$p.value > .05
+}
+included <- Vectorize(included) # Can do it for multiple test-deltas at once
+```
+
+Median(intrinsic) - Median(extrinsic) = `r median(intrinsic) - median(extrinsic)`.
+
+After some trial and error:
+
+```{r}
+included(c(1, 1.0001, 6.6, 6.601))
+```
+
+So the confidence interval is about (1, 6.6).  (That's for intrinsic minus extrinsic).
+
+For comparison, a t-test gives a confidence interval of
+`r t.test(score ~ treatment, data=ex0423, var.equal=T)$conf.int`.  (That's for
+extrinsic minus intrinsic).
+
+## 25. Guinea Pig Lifetimes: Welch t-test
+
+```{r echo=F}
+ex0425 <- sleuth.read('ascii/ex0211.csv')
+wt <- t.test(lifetime ~ group, data=ex0425)
+```
+
+A Welch-test gives 2-sided p-value `r wt$p.value` and 95% confidence interval
+(`r wt$conf.int`) for (bacilli - control).  However, the distribution is unusual.
+The control group seems to be bimodal and the bacilli distribution is shaped
+very differently.  The additive treatment model assumes that the treatment makes the same
+difference (?), on each individual to which it is applied, hence that the
+two distributions are shaped the same.  That doesn't seem to be the case here.
+
+```{r echo=F, fig.width=5, fig.height=3}
+ggplot(ex0425, aes(lifetime)) +
+   geom_histogram(binwidth=100, aes(y=..density..)) +
+   # geom_density() + # is this just obnoxious?
+   facet_grid(facets = group ~ .)
+```
+
+## 26. Schizophrenia - log-transforms
+
+```{r}
+ex0426 <- sleuth.read('ascii/case0202.csv')
+```
+
+The un-transformed differences in hippocampus volume:
+
+```{r echo=F, fig.width=5, fig.height=2}
+ggplot(ex0426, aes(unaffect - affected)) + geom_histogram(binwidth=.05)
+```
+
+Are the data skewed? Perhaps, but only perhaps. Can you tell which QQ-plot
+is the data?  (It's the top-center one).  The other plots are generated from
+a normal distribution.
+
+```{r echo=F, fig.width=3, fig.height=2}
+random.qq <- function() {
+   x <- rnorm(15)
+   qqnorm(x, main = FALSE, xaxt='n', yaxt='n', ann=FALSE)
+}
+par(mfrow = c(2,3))
+par(mar=c(0,0,0,0))
+
+random.qq()
+qqnorm(ex0426$unaffect - ex0426$affected, main = FALSE, xaxt='n', yaxt='n', ann=FALSE)
+random.qq()
+random.qq()
+random.qq()
+random.qq()
+```
+
+The problem asks to log the volumes.
+
+```{r}
+ex0426$diff.of.logs <- with(ex0426, log(unaffect) - log(affected))
+```
+
+```{r echo=F}
+t1 <- with(ex0426, t.test(unaffect - affected))
+t2 <- with(ex0426, t.test(diff.of.logs))
+```
+
+For reference, a paired t-test on the untransfored data gives p-val = `r t1$p.value` and 95%
+confidence interval (`r t1$conf.int`).  The mean difference in volume is estimated
+to be `r t1$estimate`.
+
+A paired t-test on the difference of the logged brain volumes gives p-val = `r t2$p.value`
+and 95% confidence interval of (`r t2$conf.int`).  The mean difference in logged volume
+is estimated to be `r t2$estimate`.  That means that the median of the ratios of the volumes
+is estimated to be `r exp(t2$estimate)`, and the median of the ratios has a 95% confidence
+interval of (`r exp(t2$conf.int)`).
+
+## 27. TODO

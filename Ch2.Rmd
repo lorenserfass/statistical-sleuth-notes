@@ -15,7 +15,7 @@ case0201 <- read.csv('ascii/case0201.csv')
 library(ggplot2)
 ```
 
-We have `r nrow(case0201)` sparrows collected after a storm.
+`r nrow(case0201)` sparrows were collected after a storm.
 Some perished and some survived.
 (Don't ask me how the survivors were collected).
 The length of each bird's HUMERUS was measured.
