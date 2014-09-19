@@ -1,0 +1,43 @@
+---
+title: 'Chapter 7: Simple Linear Regression: A Model for the Mean'
+author: "Loren Serfass"
+date: "09/12/2014"
+output: html_document
+---
+
+```{r echo=F}
+library(knitr)
+opts_chunk$set(warning=FALSE, prompt=FALSE, message=FALSE)
+library(ggplot2)
+theme_set(new = theme_minimal())
+library(plyr)
+```
+
+```{r echo=F}
+# upper-case column names annoy me
+sleuth.read <- function(x) {
+   d <- read.csv(x)
+   names(d) <- tolower(names(d))
+   d
+}
+```
+
+## 23.
+
+```{r echo=F}
+ex0723 <- sleuth.read('ascii/ex0723.csv')
+```
+
+## 24. Crab claw size and force
+
+```{r echo=F}
+ex0724 <- sleuth.read('ascii/ex0724.csv')
+ggplot(ex0724, aes(log(height), log(force), color=species)) + geom_point() +
+   geom_smooth(method='lm')
+```
+
+```{r}
+models <- dlply(ex0724, 'species',
+                function(d) { lm(log(force) ~ log(height), data=d) } )
+```
+

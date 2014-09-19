@@ -1,0 +1,112 @@
+---
+title: 'Chapter 6: Linear Combinations and Multiple Comparisons of Means'
+author: "Loren Serfass"
+date: "09/07/2014"
+output:
+   html_document:
+      toc: true
+---
+
+```{r echo=F}
+library(knitr)
+opts_chunk$set(warning=FALSE, prompt=FALSE, message=FALSE)
+library(ggplot2)
+theme_set(new = theme_minimal())
+library(plyr)
+```
+
+```{r echo=F}
+# upper-case column names annoy me
+sleuth.read <- function(x) {
+   d <- read.csv(x)
+   names(d) <- tolower(names(d))
+   d
+}
+```
+
+# Computational Exercises
+
+## 12. Handicap Study: linear contrast of disabilities of mobility vs disibility of communication
+
+```{r echo=F}
+ex0612 <- sleuth.read('ascii/case0601.csv')
+```
+
+My function to do a contrast with estimated gamma of 0.
+*x* is the numerical variable, *index* is the grouping
+variable.  *group1* and *group2* are each vectors of level-numbers.
+
+```{r}
+sd.pooled <- function(x, index) {
+   sd.devs <- tapply(x, index, sd)
+   sizes <- tapply(x, index, length)
+   sqrt(weighted.mean(sd.devs^2, sizes - 1))
+}
+   
+linear.contrast <- function(x, index, group1, group2) {
+   means <- tapply(x, index, mean)
+   sizes <- tapply(x, index, length)
+   sdp <- sd.pooled(x, index) # see pg. 121
+   d.f <- sum(sizes - 1)
+   
+   J <- length(group1)
+   K <- length(group2)
+   # g <- sum(means[group1]) / J - sum(means[group2]) / K # one way to do it, see pg. 156
+   # or this way:
+   coeffs <- numeric(5)
+   coeffs[group1] <- 1 / J
+   coeffs[group2] <- -1 / K
+   g <- coeffs %*% means # see pg. 154
+   
+   # finding a 95% confidence interval
+   se.g <- sdp * sqrt(coeffs^2 %*% (1/sizes)) # see pg. 154
+   t.ratio <- g / se.g
+   p.value <- 2 * pt(abs(t.ratio), df=d.f, lower.tail = F)
+   t <- qt(.975, d.f) # t-value for upper end of 95% confidence interval
+   conf.int <- g + se.g * c(-t, t)
+   
+   l <- list()
+   l$p.value <- p.value
+   l$conf.int <- conf.int
+   l$coeffs <- coeffs
+   l$g <- g
+   l$se.g <- se.g
+   l
+}
+```
+
+Using the function to re-create the contrast between wheelchair/crutches and amputee/hearing
+(in the book on pg 155):
+
+```{r}
+levels(ex0612$handicap) # hearing/crutches = c(2,5), amputee/hearing = c(1,3)
+cont <- with(ex0612, linear.contrast(score, handicap, c(2,5), c(1,3)))
+```
+
+The p-value is `r cont$p.value` and the confidence interval is (`r cont$conf.int`).
+
+Next, a contrast of mobility handicaps vs hearing impairment:
+
+```{r}
+cont <- with(ex0612, linear.contrast(score, handicap, c(1,2,5), 3))
+```
+
+The p-value is `r cont$p.value` and the confidence interval is (`r cont$conf.int`).
+
+## 13. Handicap study - Bonferroni method
+
+The question asks for simultaneous confidence intervals for these differences:
+
+* Crutches - Amputee (2 - 1)
+* Amputee - Wheelchair (1 - 5)
+* Crutches - Wheelchair (2 - 5)
+
+```{r}
+ind.conf.level <- 1 - .05/3
+attach(ex0612)
+sp <- sd.pooled(score, handicap)
+sizes <- tapply(score, handicap, length)
+se <- sp * sqrt(sum(1/sizes))
+detach(ex0612)
+```
+
