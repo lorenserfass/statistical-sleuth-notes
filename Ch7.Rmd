@@ -2,7 +2,9 @@
 title: 'Chapter 7: Simple Linear Regression: A Model for the Mean'
 author: "Loren Serfass"
 date: "09/12/2014"
-output: html_document
+output:
+   html_document:
+      toc: true
 ---
 
 ```{r echo=F}
@@ -22,22 +24,123 @@ sleuth.read <- function(x) {
 }
 ```
 
+# Computational Exercises
+
+## 12. Var and SD in linear regression
+
+```{r}
+residuals <- c(-3.3,2.1,-4,-1.5,5.1,1.6)
+(sd.dev <- sum(residuals^2) / (length(residuals) - 2)) # Standard deviation.
+```
+
+The sample standard deviation is $\hat{\sigma} = `r sd.dev`$, so the variance is
+$\hat{\sigma}^2 = `r sd.dev^2`$.  The degrees of freedom are `r length(residuals) - 2`.
+
+## 13. Big bang: confidence interval for intercept
+
+```{r}
+c0701 <- sleuth.read('ascii/case0701.csv')
+m <- lm(distance ~ velocity, data=c0701)
+sm <- summary(m)
+se.intercept <- sm$coefficients[1,2]
+half.width <- qt(.975, m$df.residual) * se.intercept
+sm$coefficients[1,1] + c(-half.width, half.width)
+```
+
+## 14. Planet distances linear model
+
+```{r fig.width=5, fig.height=3.5}
+ex0714 <- sleuth.read('ascii/ex0116.csv')
+# with(ex0714, plot(order, distance))
+ggplot(ex0714, aes(order, log(distance))) + geom_point() +
+   geom_smooth(method='lm', se=F) +
+   geom_text(aes(label=as.character(planet)),hjust=-.4,size=3.5) +
+   scale_x_continuous(limits=c(0,12), breaks=0:12)
+m <- lm(log(distance) ~ order, ex0714)
+# log(ex0714$distance) == m$fitted.values + m$residuals
+```
+
+These are the estimates of intercept and slope:
+
+```{r}
+m$coefficients
+```
+
+Calculating the fitted values and residuals (these are also already
+in the m object as `m$fitted.values` and `m$residuals`):
+
+```{r}
+my.fitted <- m$coefficients[1] + ex0714$order * m$coefficients[2]
+my.resid <- log(ex0714$distance) - my.fitted
+```
+
+Calculating estimate of sigma:
+
+```{r}
+sum(my.resid^2) / 8
+```
+
+## 15. Planet distance and Bode's law
+
+```{r}
+sm <- summary(m)
+coef <- sm$coefficients[2,]
+t <- (coef['Estimate'] - log(2)) / coef['Std. Error']
+names(t) <- NULL
+(p <- 2 * pt(abs(t), df=sm$df[2], lower.tail = F)) # TODO: is this right??
+```
+
+The p-value for the hypothesis that $\beta_{1} = log(2)$ is p.val = `r p`, so we reject
+that hypothesis.
+
+
+$SD(T) = S_{R} \sqrt{\dfrac{n_{1}n_{2}}{(n_{1}+n_{2})}}$
+
+Sample correlation coefficient:
+
+$r_{XY} = \dfrac{\sum\limits_{i=1}^{n}(   X_{i} - \overline{X})(Y_{i} - \overline{Y})/(n-1)}{s_{X}s_{Y}}$
+
 ## 23.
 
 ```{r echo=F}
 ex0723 <- sleuth.read('ascii/ex0723.csv')
+
 ```
 
 ## 24. Crab claw size and force
 
-```{r echo=F}
+```{r echo=F, fig.height=3, fig.width=7}
 ex0724 <- sleuth.read('ascii/ex0724.csv')
 ggplot(ex0724, aes(log(height), log(force), color=species)) + geom_point() +
-   geom_smooth(method='lm')
+   geom_smooth(method='lm', se=F)
 ```
 
 ```{r}
 models <- dlply(ex0724, 'species',
                 function(d) { lm(log(force) ~ log(height), data=d) } )
+```
+
+## Digression: contouring the cost function of a linear regression
+
+```{r}
+n <- 50
+x <- rnorm(n, 10, 4)
+y <- 3 + 0.5 * x + rnorm(n, 0, 2)
+d <- data.frame(x,y)
+ggplot(d, aes(x,y)) + geom_point() + geom_smooth(method='lm')
+sm <- summary(lm(y ~ x, d))
+ci.seq <- function(est, se, df) {
+   hw <- se * qt(.975,df)
+   seq(from = est - hw, to = est + hw, length.out = 50)
+}
+beta0 <- ci.seq(sm$coefficients[1,1], sm$coefficients[1,2], sm$df[2])
+beta1 <- ci.seq(sm$coefficients[2,1], sm$coefficients[2,2], sm$df[2])
+cost <- Vectorize(function(b0, b1) { (1/(2*n)) * sum( (b0 + b1* d$x - d$y)^2 ) })
+betas <- expand.grid(beta0=beta0, beta1=beta1)
+betas$cost <- cost(betas$beta0, betas$beta1)
+ggplot(betas, aes(beta0,beta1)) + geom_contour(aes(z=cost),bins=50) +
+   annotate(geom="point", x=sm$coefficients[1,1], y=sm$coefficients[2,1])
+ggplot(betas, aes(beta0,beta1)) + geom_tile(aes(fill=cost)) +
+   geom_contour(aes(z=cost),bins=20,color='red')
 ```
 

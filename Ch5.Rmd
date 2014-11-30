@@ -8,19 +8,32 @@ output:
       theme: spacelab
       highlight: pygments
 ---
+```{r echo=F}
+library(knitr)
+opts_chunk$set(warning=FALSE, prompt=FALSE, message=FALSE)
+library(ggplot2)
+theme_set(new = theme_minimal())
+library(plyr)
+```
+
+```{r echo=F}
+# upper-case column names annoy me
+sleuth.read <- function(x) {
+   d <- read.csv(x)
+   names(d) <- tolower(names(d))
+   d
+}
 
 ## Mice Diet and Longevity
 ```{r}
-c0501 <- read.csv('ascii/case0501.csv')
-names(c0501) <- tolower(names(c0501))
+c0501 <- sleuth.read('ascii/case0501.csv')
 ```
 
 
 ## The Spock Trial
 
 ```{r echo=F}
-c0502 <- read.csv('ascii/case0502.csv')
-names(c0502) <- tolower(names(c0502))
+c0502 <- sleuth.read('ascii/case0502.csv')
 ```
 
 ```{r}
@@ -189,7 +202,7 @@ reduced <- aov(percent ~ 1, data=ex0513)
 (model.comparison <- anova(full, reduced))
 ```
 
-## 17. An F-test by hand
+## 17. An F-test by hand - TODO: do the table in markdown style
 
 <table border="1">
 <tr>
@@ -289,6 +302,19 @@ set.seed(5432)
 fake.data <- ddply(ex0519, .(species), transform, sam = sneaky.sample(n, mn, sample.sd))
 anova(aov(sam ~ species, data=fake.data))
 ```
+
+## Tufte plot of Spock data
+
+```{r fig.width=5, fig.height=2.5}
+c0502 <- sleuth.read('ascii/case0502.csv')
+ggb <- ggplot_build(ggplot(c0502, aes(judge, percent)) + geom_boxplot())
+ggplot(ggb$data[[1]]) + geom_segment(aes(x=x, y=ymin, xend=x, yend=lower)) +
+   geom_segment(aes(x=x, y=upper, xend=x, yend=ymax)) +
+   geom_point(aes(x=x, y=middle)) + xlab("Judge") + ylab("Percent women") +
+   ggtitle("Tufte 'box' plot of Spock data\n(outliers not included!)") +
+   coord_flip()
+```
+
 
 TODO
 

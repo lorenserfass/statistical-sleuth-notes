@@ -9,6 +9,23 @@ output:
       highlight: tango
 ---
 
+```{r echo=F}
+library(knitr)
+opts_chunk$set(warning=FALSE, prompt=FALSE, message=FALSE)
+library(ggplot2)
+theme_set(new = theme_minimal())
+library(plyr)
+```
+
+```{r echo=F}
+# upper-case column names annoy me
+sleuth.read <- function(x) {
+   d <- read.csv(x)
+   names(d) <- tolower(names(d))
+   d
+}
+```
+
 ## Bumpus sparrows
 ```{r echo=F}
 case0201 <- read.csv('ascii/case0201.csv')
@@ -19,12 +36,12 @@ library(ggplot2)
 Some perished and some survived.
 (Don't ask me how the survivors were collected).
 The length of each bird's HUMERUS was measured.
-```{r echo=F}
+```{r echo=F, fig.width=6, fig.height=2}
 table(case0201$STATUS)
 # require(aplpack)
 # with(case0201, stem.leaf.backback(HUMERUS[STATUS=='SURVIVED'],
 #                                  HUMERUS[STATUS=='PERISHED'], 1))
-qplot(STATUS, HUMERUS, data=case0201, geom="boxplot")
+qplot(STATUS, HUMERUS, data=case0201, geom="boxplot") + coord_flip()
 ```
 
 The two groups have about the same spread.
@@ -38,7 +55,9 @@ would not increase the significance either.
 ```{r echo=F}
 case0202 <- read.csv('ascii/case0202.csv')
 ```
-We have `r nrow(case0202)` pairs of identical twins.
+We have `r nrow(case0202)` pairs of identical twins.  In each pair, one twin
+is affected by schizophrenia and the other is not.
+
 ```{r echo=F}
 # unnecessary:
 require(reshape2)
