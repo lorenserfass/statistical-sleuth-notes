@@ -12,5 +12,7 @@ Links to chapters:
 * [Chapter 3: A Closer Look at Assumptions](Ch3.html)
 * [Chapter 4: Alternatives to the t-Tools](Ch4.html)
 * [Chapter 5: Comparisons Among Several Samples](Ch5.html)
+* [Chapter 5: Computational Exercises](Ch5_ComputationalExercises.html)
+* [Chapter 5: Data Problems](Ch5_DataProblems.html)
 * [Chapter 6: Linear Combinations and Multiple Comparisons of Means](Ch6.html)
-* [Chapter 7](Ch7.html)
+* [Chapter 7: Simple Linear Regression: A Model for the Mean](Ch7.html)
