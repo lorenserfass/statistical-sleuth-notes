@@ -1,21 +1,22 @@
 ---
-title: 'Chapter 6: Linear Combinations and Multiple Comparisons of Means'
+title: "Chapter 6: Linear Combinations and Multiple Comparisons of Means"
 author: "Loren Serfass"
 date: "09/07/2014"
 output:
-   html_document:
-      toc: true
+   knitrBootstrap::bootstrap_document:
+        title: "Chapter 6: Linear Combinations and Multiple Comparisons of Means"
+        theme: default
+        highlight: xcode
+        theme.chooser: TRUE
+        highlight.chooser: TRUE
 ---
 
-```{r echo=F}
+```{r bootstrap.show.code=FALSE, bootstrap.show.message=FALSE}
 library(knitr)
-opts_chunk$set(warning=FALSE, prompt=FALSE, message=FALSE)
+opts_chunk$set(bootstrap.show.code=FALSE, bootstrap.thumbnail=FALSE, bootstrap.show.message=FALSE)
 library(ggplot2)
 theme_set(new = theme_minimal())
 library(plyr)
-```
-
-```{r echo=F}
 # upper-case column names annoy me
 sleuth.read <- function(x) {
    d <- read.csv(x)
@@ -26,7 +27,7 @@ sleuth.read <- function(x) {
 
 # Computational Exercises
 
-## 12. Handicap Study: linear contrast of disabilities of mobility vs disibility of communication
+## 12. Handicap Study: linear contrast of disabilities of mobility vs disability of communication
 
 ```{r echo=F}
 ex0612 <- sleuth.read('ascii/case0601.csv')

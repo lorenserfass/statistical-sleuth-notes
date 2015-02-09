@@ -3,20 +3,22 @@ title: 'Chapter 7: Simple Linear Regression: A Model for the Mean'
 author: "Loren Serfass"
 date: "09/12/2014"
 output:
-   html_document:
-      toc: true
+       knitrBootstrap::bootstrap_document:
+        title: "Chapter 7: Simple Linear Regression: A Model for the Mean"
+        theme: default
+        highlight: xcode
+        theme.chooser: TRUE
+        highlight.chooser: TRUE
 ---
 
-```{r echo=F}
+# Chapter 7: Simple Linear Regression: A Model for the Mean
+
+```{r bootstrap.show.code=FALSE, bootstrap.show.message=FALSE}
 library(knitr)
-opts_chunk$set(warning=FALSE, prompt=FALSE, message=FALSE)
+opts_chunk$set(bootstrap.show.code=FALSE, bootstrap.thumbnail=FALSE, bootstrap.show.message=FALSE)
 library(ggplot2)
 theme_set(new = theme_minimal())
 library(plyr)
-```
-
-```{r echo=F}
-# upper-case column names annoy me
 sleuth.read <- function(x) {
    d <- read.csv(x)
    names(d) <- tolower(names(d))
@@ -24,9 +26,9 @@ sleuth.read <- function(x) {
 }
 ```
 
-# Computational Exercises
+## Computational Exercises
 
-## 12. Var and SD in linear regression
+### 12. Var and SD in linear regression
 
 ```{r}
 residuals <- c(-3.3,2.1,-4,-1.5,5.1,1.6)
@@ -36,7 +38,7 @@ residuals <- c(-3.3,2.1,-4,-1.5,5.1,1.6)
 The sample standard deviation is $\hat{\sigma} = `r sd.dev`$, so the variance is
 $\hat{\sigma}^2 = `r sd.dev^2`$.  The degrees of freedom are `r length(residuals) - 2`.
 
-## 13. Big bang: confidence interval for intercept
+### 13. Big bang: confidence interval for intercept
 
 ```{r}
 c0701 <- sleuth.read('ascii/case0701.csv')
@@ -47,7 +49,7 @@ half.width <- qt(.975, m$df.residual) * se.intercept
 sm$coefficients[1,1] + c(-half.width, half.width)
 ```
 
-## 14. Planet distances linear model
+### 14. Planet distances linear model
 
 ```{r fig.width=5, fig.height=3.5}
 ex0714 <- sleuth.read('ascii/ex0116.csv')
@@ -80,7 +82,7 @@ Calculating estimate of sigma:
 sum(my.resid^2) / 8
 ```
 
-## 15. Planet distance and Bode's law
+### 15. Planet distance and Bode's law
 
 ```{r}
 sm <- summary(m)
@@ -100,14 +102,14 @@ Sample correlation coefficient:
 
 $r_{XY} = \dfrac{\sum\limits_{i=1}^{n}(   X_{i} - \overline{X})(Y_{i} - \overline{Y})/(n-1)}{s_{X}s_{Y}}$
 
-## 23.
+### 23.
 
 ```{r echo=F}
 ex0723 <- sleuth.read('ascii/ex0723.csv')
 
 ```
 
-## 24. Crab claw size and force
+### 24. Crab claw size and force
 
 ```{r echo=F, fig.height=3, fig.width=7}
 ex0724 <- sleuth.read('ascii/ex0724.csv')
@@ -120,7 +122,7 @@ models <- dlply(ex0724, 'species',
                 function(d) { lm(log(force) ~ log(height), data=d) } )
 ```
 
-## Digression: contouring the cost function of a linear regression
+### Digression: contouring the cost function of a linear regression
 
 ```{r}
 n <- 50

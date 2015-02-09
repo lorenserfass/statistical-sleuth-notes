@@ -4,9 +4,9 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta http-equiv="Content-Style-Type" content="text/css" />
   <meta name="generator" content="pandoc" />
-  <meta name="author" content="Loren Serfass" />
-  <meta name="date" content="2014-09-07" />
-  <title>Chapter 6: Linear Combinations and Multiple Comparisons of Means</title>
+  <meta name="author" content="Loren" />
+  <meta name="date" content="2014-08-26" />
+  <title>Chapter 5: Data Problems</title>
   <style type="text/css">code{white-space: pre;}</style>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
@@ -864,12 +864,12 @@
 </head>
 <body>
 <div id="header">
-<h1 class="title">Chapter 6: Linear Combinations and Multiple Comparisons of Means</h1>
-<h2 class="author">Loren Serfass</h2>
-<h3 class="date">09/07/2014</h3>
+<h1 class="title">Chapter 5: Data Problems</h1>
+<h2 class="author">Loren</h2>
+<h3 class="date">08/26/2014</h3>
 </div>
 <title >
-Chapter 6: Linear Combinations and Multiple Comparisons of Means
+Chapter 5: Data Problems
 </title><div id="wrap"><div class="container"><div class="row row-offcanvas row-offcanvas-right"><div class="contents col-xs-12 col-md-10">
 <div class="row"><button class="source R toggle btn btn-xs btn-primary">
 <span class="glyphicon glyphicon-chevron-up"></span> R source
@@ -885,83 +885,101 @@ sleuth.read <- function(x) {
    d
 }</code></pre></div>
 
-<h1 id="computational-exercises">Computational Exercises</h1>
-<h2 id="handicap-study-linear-contrast-of-disabilities-of-mobility-vs-disability-of-communication">12. Handicap Study: linear contrast of disabilities of mobility vs disability of communication</h2>
-<p>My function to do a contrast with estimated gamma of 0. <em>x</em> is the numerical variable, <em>index</em> is the grouping variable. <em>group1</em> and <em>group2</em> are each vectors of level-numbers.</p>
-<div class="row"><button class="source R toggle btn btn-xs btn-primary">
-<span class="glyphicon glyphicon-chevron-up"></span> R source
-</button><pre style="display:none"><code class="source r">sd.pooled <- function(x, index) {
-   sd.devs <- tapply(x, index, sd)
-   sizes <- tapply(x, index, length)
-   sqrt(weighted.mean(sd.devs^2, sizes - 1))
-}
-   
-linear.contrast <- function(x, index, group1, group2) {
-   means <- tapply(x, index, mean)
-   sizes <- tapply(x, index, length)
-   sdp <- sd.pooled(x, index) # see pg. 121
-   d.f <- sum(sizes - 1)
-   
-   J <- length(group1)
-   K <- length(group2)
-   # g <- sum(means[group1]) / J - sum(means[group2]) / K # one way to do it, see pg. 156
-   # or this way:
-   coeffs <- numeric(5)
-   coeffs[group1] <- 1 / J
-   coeffs[group2] <- -1 / K
-   g <- coeffs %*% means # see pg. 154
-   
-   # finding a 95% confidence interval
-   se.g <- sdp * sqrt(coeffs^2 %*% (1/sizes)) # see pg. 154
-   t.ratio <- g / se.g
-   p.value <- 2 * pt(abs(t.ratio), df=d.f, lower.tail = F)
-   t <- qt(.975, d.f) # t-value for upper end of 95% confidence interval
-   conf.int <- g + se.g * c(-t, t)
-   
-   l <- list()
-   l$p.value <- p.value
-   l$conf.int <- conf.int
-   l$coeffs <- coeffs
-   l$g <- g
-   l$se.g <- se.g
-   l
-}</code></pre></div>
 
-<p>Using the function to re-create the contrast between wheelchair/crutches and amputee/hearing (in the book on pg 155):</p>
+<h1 id="data-problems">Data Problems</h1>
+<h2 id="was-t-rex-warm-blooded">23. Was T-Rex warm-blooded?</h2>
+<div class="row">
+<button class="source R toggle btn btn-xs btn-primary">
+<span class="glyphicon glyphicon-chevron-up"></span> R source
+</button><pre style="display:none"><code class="source r">ex0523 <- read.csv('ascii/ex0523.csv')
+names(ex0523) <- tolower(names(ex0523))</code></pre></div>
+
+<p>Sure look different to me:</p>
+<div class="row">
+<button class="source R toggle btn btn-xs btn-primary">
+<span class="glyphicon glyphicon-chevron-up"></span> R source
+</button><pre style="display:none"><code class="source r">ggplot(ex0523, aes(bonegrp, oxygen)) + geom_boxplot() + theme_minimal()</code></pre><div class="row text-center">
+<img src="data:image/png;base64,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" alt="plot of chunk unnamed-chunk-3" />
+</div>
+</div>
+<p>The spreads look pretty different though.</p>
 <div class="row"><button class="source R toggle btn btn-xs btn-primary">
 <span class="glyphicon glyphicon-chevron-up"></span> R source
-</button><pre style="display:none"><code class="source r">levels(ex0612$handicap) # hearing/crutches = c(2,5), amputee/hearing = c(1,3)</code></pre><button class="output R toggle btn btn-xs btn-success">
+</button><pre style="display:none"><code class="source r">anova(aov(oxygen ~ bonegrp, data=ex0523))</code></pre><button class="output R toggle btn btn-xs btn-success">
 <span class="glyphicon glyphicon-chevron-down"></span> R output
-</button><pre style=""><code class="output r">## [1] "AMPUTEE"    "CRUTCHES"   "HEARING"    "NONE"       "WHEELCHAIR"
+</button><pre style=""><code class="output r">## Analysis of Variance Table
+## 
+## Response: oxygen
+##           Df Sum Sq Mean Sq F value  Pr(>F)    
+## bonegrp   11   6.07   0.552    7.43 9.7e-07 ***
+## Residuals 40   2.97   0.074                    
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+</code></pre></div>
+
+<h2 id="zinc-and-vegetarians-observational">24. Zinc and vegetarians (observational)</h2>
+<div class="row">
+<button class="source R toggle btn btn-xs btn-primary">
+<span class="glyphicon glyphicon-chevron-up"></span> R source
+</button><pre style="display:none"><code class="source r">ex0524 <- read.csv('ascii/ex0524.csv')
+names(ex0524) <- tolower(names(ex0524))</code></pre></div>
+
+<p>Doesn't look like much evidence:</p>
+<div class="row">
+<button class="source R toggle btn btn-xs btn-primary">
+<span class="glyphicon glyphicon-chevron-up"></span> R source
+</button><pre style="display:none"><code class="source r">ggplot(ex0524, aes(group, zinc)) + geom_boxplot()</code></pre><div class="row text-center">
+<img src="data:image/png;base64,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" alt="plot of chunk unnamed-chunk-6" />
+</div>
+</div>
+<p>The residuals in the &quot;just control&quot; group are calculated in reference to the mean of the whole control group. So the plot shows that the observations jump around <strong>together</strong> from day to day. So the day seems to have an affect on the protein measurement.</p>
+<p>The ten groups do not have equal means [shorthand for &quot;we reject the null hypothesis that the ten groups have equal means&quot;]:</p>
+<div class="row">
+<button class="source R toggle btn btn-xs btn-primary">
+<span class="glyphicon glyphicon-chevron-up"></span> R source
+</button><pre style="display:none"><code class="source r">ex0518 <- sleuth.read('ascii/ex0518.csv')
+six <- aov(protein ~ treatmnt, ex0518)
+ten <- aov(protein ~ trt.daygroup, ex0518)
+anova(ten)</code></pre><button class="output R toggle btn btn-xs btn-success">
+<span class="glyphicon glyphicon-chevron-down"></span> R output
+</button><pre style=""><code class="output r">## Analysis of Variance Table
+## 
+## Response: protein
+##              Df Sum Sq Mean Sq F value  Pr(>F)    
+## trt.daygroup  9  11147    1239     7.8 7.2e-05 ***
+## Residuals    20   3175     159                    
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+</code></pre></div>
+
+<p>The means of the control group change from day to day: (Why are the two p-values different?)</p>
+<div class="row">
+<button class="source R toggle btn btn-xs btn-primary">
+<span class="glyphicon glyphicon-chevron-up"></span> R source
+</button><pre style="display:none"><code class="source r">anova(ten, six)</code></pre><button class="output R toggle btn btn-xs btn-success">
+<span class="glyphicon glyphicon-chevron-down"></span> R output
+</button><pre style=""><code class="output r">## Analysis of Variance Table
+## 
+## Model 1: protein ~ trt.daygroup
+## Model 2: protein ~ treatmnt
+##   Res.Df  RSS Df Sum of Sq    F Pr(>F)   
+## 1     20 3175                            
+## 2     24 7100 -4     -3925 6.18 0.0021 **
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 </code></pre><button class="source R toggle btn btn-xs btn-primary">
 <span class="glyphicon glyphicon-chevron-up"></span> R source
-</button><pre style="display:none"><code class="source r">cont <- with(ex0612, linear.contrast(score, handicap, c(2,5), c(1,3)))</code></pre></div>
-
-<p>The p-value is 0.0022 and the confidence interval is (0.5213, 2.2644).</p>
-<p>Next, a contrast of mobility handicaps vs hearing impairment:</p>
-<div class="row">
-<button class="source R toggle btn btn-xs btn-primary">
-<span class="glyphicon glyphicon-chevron-up"></span> R source
-</button><pre style="display:none"><code class="source r">cont <- with(ex0612, linear.contrast(score, handicap, c(1,2,5), 3))</code></pre></div>
-
-<p>The p-value is 0.0222 and the confidence interval is (0.1745, 2.1874).</p>
-<h2>13. Handicap study - Bonferroni method</h2>
-<p>The question asks for simultaneous confidence intervals for these differences:</p>
-<ul>
-<li>Crutches - Amputee (2 - 1)</li>
-<li>Amputee - Wheelchair (1 - 5)</li>
-<li>Crutches - Wheelchair (2 - 5)</li>
-</ul>
-<div class="row">
-<button class="source R toggle btn btn-xs btn-primary">
-<span class="glyphicon glyphicon-chevron-up"></span> R source
-</button><pre style="display:none"><code class="source r">ind.conf.level <- 1 - .05/3
-attach(ex0612)
-sp <- sd.pooled(score, handicap)
-sizes <- tapply(score, handicap, length)
-se <- sp * sqrt(sum(1/sizes))
-detach(ex0612)</code></pre></div>
-</div></div>
+</button><pre style="display:none"><code class="source r">anova(aov(protein ~ day, data=subset(ex0518, treatmnt=='CONTROL')))</code></pre><button class="output R toggle btn btn-xs btn-success">
+<span class="glyphicon glyphicon-chevron-down"></span> R output
+</button><pre style=""><code class="output r">## Analysis of Variance Table
+## 
+## Response: protein
+##           Df Sum Sq Mean Sq F value Pr(>F)   
+## day        4   3925     981    8.08 0.0036 **
+## Residuals 10   1215     121                  
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+</code></pre></div></div></div>
 <div class="navbar navbar-fixed-bottom navbar-inverse"><div class="container"><div class="navbar-header"><button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-responsive-collapse">
 <span class="icon-bar"></span> <span class="icon-bar"></span> <span class="icon-bar"></span>
 </button></div>

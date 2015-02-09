@@ -3,69 +3,95 @@ title: 'Chapter 3: A Closer Look at Assumptions'
 author: "Loren"
 date: "08/18/2014"
 output:
-   html_document:
-      toc: true
-      theme: flatly
-      highlight: tango
+   knitrBootstrap::bootstrap_document:
+        title: "Chapter 3: A Closer Look at Assumptions"
+        theme: default
+        highlight: xcode
+        theme.chooser: TRUE
+        highlight.chooser: TRUE
 ---
 
-## Cloud Seeding
-
-```{r echo =F}
-c0301 <- read.csv('ascii/case0301.csv')
-require(ggplot2)
+```{r bootstrap.show.code=FALSE, bootstrap.show.message=FALSE}
+library(knitr)
+opts_chunk$set(bootstrap.show.code=FALSE, bootstrap.thumbnail=FALSE, bootstrap.show.message=FALSE)
+library(ggplot2)
+theme_set(new = theme_minimal())
+library(plyr)
+library(reshape2)
+# upper-case column names annoy me
+sleuth.read <- function(x) {
+   d <- read.csv(x)
+   names(d) <- tolower(names(d))
+   d
+}
 ```
+
+# Chapter 3: A Closer Look at Assumptions
+
+## This chapter's examples
+
+### Cloud Seeding
+
+```{r}
+c0301 <- sleuth.read('ascii/case0301.csv')
+```
+
 On `r nrow(c0301)` days, clouds were either seeded or not (randomly decided), and rainfall was recorded.
 There were an equal number of days in each treatment group.
-```{r echo=F}
-table(c0301$TREATMENT)
+```{r}
+table(c0301$treatment)
 ```
 
 The data are skewed:
 
-```{r echo=F}
-qplot(TREATMENT, RAINFALL, data=c0301, geom='point')
+```{r fig.width=9, fig.height=2}
+qplot(treatment, rainfall, data=c0301, geom='point') + coord_flip()
 ```
 
 A log transform seems to give normally-distributed data of approximately equal spreads:
 
-```{r echo=F}
-qplot(TREATMENT, log(RAINFALL), data=c0301, geom='boxplot') + geom_point()
+```{r fig.width=9, fig.height=2}
+qplot(treatment, log(rainfall), data=c0301, geom='boxplot') + geom_point() +
+   coord_flip()
 ```
-```{r echo=F}
-qplot(log(RAINFALL), data=c0301, binwidth=1) + facet_grid(facets=TREATMENT ~ .)
-```
-
-So a t-test is appropriate:
-```{r echo=F}
-(tt <- t.test(log(RAINFALL) ~ TREATMENT, data=c0301))
-diff <- tt$estimate[1] - tt$estimate[2]
-names(diff) <- NULL
+```{r fig.width=3, fig.height=3}
+qplot(log(rainfall), data=c0301, binwidth=1) + facet_grid(facets=treatment ~ .)
 ```
 
-The additive effect on log(RAINFALL) (from UNSEEDED to SEEDED) is `r diff`.  So the multiplicative effect on RAINFALL itself is `r exp(diff)`.  The 95% confidence interval for the ratio of SEEDED to UNSEEDED is `r exp(tt$conf.int)`.
-
-## Agent orange
-```{r echo = F}
-c0302 <- read.csv('ascii/case0302.csv')
-```
+The log-transformed data fulfills the assumptions of a t-test:
 ```{r}
-qplot(VETERAN, DIOXIN, data=c0302, position=position_jitter(w=0.1), alpha=0.1) +
-   geom_boxplot(alpha=0.5)
+(tt <- t.test(log(rainfall) ~ treatment, data=c0301, var.equal=T))
+diff <- unname(tt$estimate[1] - tt$estimate[2])
 ```
 
-They really seem to have approximately the same standard deviation.
-There are zeroes in the dataset, so taking a log does not make sense.
-(And list other reasons too...)  The VIETNAM group is much larger, so
+The additive effect on log(rainfall) (from UNSEEDED to SEEDED) is `r diff`, so the multiplicative effect on rainfall itself is `r exp(diff)`.  The 95% confidence interval for the ratio of SEEDED to UNSEEDED is (`r exp(tt$conf.int)`).
+
+### Agent orange
+```{r}
+c0302 <- sleuth.read('ascii/case0302.csv')
+```
+```{r fig.width=10, fig.height=2}
+qplot(veteran, dioxin, data=c0302, position=position_jitter(w=0.1), alpha=0.1) +
+   geom_boxplot(alpha=0) + coord_flip()
+```
+
+The two groups seem to have approximately the same standard deviation.
+```{r}
+with(c0302, by(dioxin, veteran, sd))
+```
+
+There are zeroes in the dataset, so taking a log directly does not make sense.  The `vietnam` group is much larger, so
 we should expect a larger range in that group.
 
 TODO: continue Agent Orange
 
-# Conceptual Exercises
+## Conceptual Exercises
 
-## 20 Means, Medians, Logs, Ratios
+### 20 Means, Medians, Logs, Ratios
 
-```{r echo=F}
+Here is some made-up data on college tuition:
+
+```{r}
 ex0320 <- data.frame(college=c('a','b','c','d','e'),
                      outofstate=c(3000,8000,30000,32000,40000),
                      instate=c(1000,4000,5000,8000,40000))
@@ -84,27 +110,27 @@ median(log(ex0320$instate))
 log(median(ex0320$instate))
 ```
 
-The median of the ratios is not the same as the ratio of the medians:
+The median of the ratios is **not** the same as the ratio of the medians:
 
 ```{r}
 median(ex0320$outofstate / ex0320$instate)
 median(ex0320$outofstate) / median(ex0320$instate)
 ```
 
-# Computational Exercises
+## Computational Exercises
 
-## 21. Umpires and Life-Expectancy
+### 21. Umpires and Life-Expectancy
 
-```{r echo=F}
+```{r}
 ex0321 <- read.csv('ascii/ex0321.csv')
 ```
 
 The study asks whether umpires live shorter than expected.  `r sum(ex0321$censored == 1)` of the umpires in the data
 had not died at the time of the study, so their lifelength was not known.
-The original study 'censored' their data.  A t-test on censored data looks like this:
+The original study 'censored' their data.  A t-test on non-censored data looks like this:
 
 ```{r}
-with(ex0321[ ex0321$censored == 0,], t.test(expected - lifelength))
+with(ex0321[ ex0321$censored == 0,], t.test(expected - lifelength, var.equal=T))
 ```
 
 TODO: continue this.
@@ -116,9 +142,9 @@ ggplot(ex0321, aes(expected, lifelength, color=factor(censored))) + geom_point(a
 ```
 
 
-## 22. Voltage and Insulating Fluid
+### 22. Voltage and Insulating Fluid
 
-```{r echo=F}
+```{r}
 ex0322 <- data.frame(kV=factor(c(26,26,26,28,28,28,28,28)),
                      time=c(5.79,1579.52,2323.7,68.8,108.29,110.29,426.07,1067.6))
 ex0322
@@ -126,39 +152,34 @@ ex0322
 
 TODO: continue this
 
-## 23. Solar Radiation and Skin Cancer
+### 23. Solar Radiation and Skin Cancer
 
 ```{r}
-ex0323 <- read.csv('ascii/ex0323.csv')
-names(ex0323) <- tolower(names(ex0323))
+ex0323 <- sleuth.read('ascii/ex0323.csv')
 head(ex0323)
 ```
 
 a) TODO
 b) In the following plot, high-sunspot years are almost all above the regression line. Low-sunspot years are almost all below the line.  There is an upward trend in both groups.  Does this mean that the observations aren't independent?  Would this make the test sensitive to the choice of what years to start and end at?
 
-```{r echo=F}
+```{r fig.width=4, fig.height=3}
 ggplot(ex0323, aes(year, rate)) + geom_point(aes(color=sunspot)) + geom_smooth(method='lm',se=F,color='black') + theme_minimal()
 ```
 
-## 24. Sex Discrimination revisited with logs
+### 24. Sex Discrimination revisited with logs
 
 The data don't look skewed, so I'm not sure why they're having me do this.
-Without log:
 
-```{r echo=F}
-ex0324 <- read.csv('ascii/case0102.csv')
-names(ex0324) <- tolower(names(ex0324))
-ggplot(ex0324, aes(sex, salary)) + geom_boxplot()
+```{r}
+ex0324 <- sleuth.read('ascii/case0102.csv')
+ggplot(ex0324, aes(sex, salary)) + geom_boxplot() + ggtitle("Salary not log-transformed")
 ```
 
-Now logged:
-
-```{r echo=F}
-ggplot(ex0324, aes(sex, log(salary))) + geom_boxplot()
+```{r}
+ggplot(ex0324, aes(sex, log(salary))) + geom_boxplot() + ggtitle("Salary log-transformed")
 ```
 
-```{r echo=F}
+```{r}
 (t <- t.test(log(salary) ~ sex, ex0324))
 ```
 
@@ -166,9 +187,9 @@ P-value = `r t$p.val`.  The 95% confidence interval for the *difference in logs*
 is (`r t$conf.int`).  The 95% confidence interval for the *ratio of medians* is
 (`r exp(t$conf.int)`).
 
-## 25. Agent orange and outliers
+### 25. Agent orange and outliers
 
-```{r echo=F}
+```{r}
 ex0325 <- read.csv('ascii/case0302.csv')
 names(ex0325) <- tolower(names(ex0325))
 two.largest <- order(ex0325$dioxin, decreasing = T)[1:2]
@@ -178,11 +199,11 @@ The one-sided p-value of a t-test, without removing any points or transforming t
 is `r t.test(dioxin ~ veteran, ex0325, alternative = 'less', var.equal=T)$p.val`.  After removing the highest two points, the p-value is
 `r t.test(dioxin ~ veteran, ex0325[-two.largest,], alternative = 'less', var.equal=T)$p.val`.
 
-## 26. Agent orange, log-transformed
+### 26. Agent orange, log-transformed
 
 Here are boxplots of log(dioxin + 0.5):
 
-```{r echo=F}
+```{r}
 qplot(veteran, log(dioxin + 0.5), data=ex0325, geom=c('jitter', 'boxplot'))
 t <- t.test(log(dioxin + 0.5) ~ veteran, data=ex0325, var.equal=T)
 ```
@@ -191,25 +212,25 @@ The 2-sided p-value of a t-test on the transformed variable is `r t$p.val`.
 A confidence interval (approximate because of the added 0.5) for the ratio of medians
 is (`r exp(t$conf.int)`).  That's median(other)/median(vietnam).
 
-## 27. TODO
+### 27. TODO
 
 
-## 28. TODO
+### 28. TODO
 
 
-## 29. TODO
+### 29. TODO
 
 
-## 30. Cloud seeding: multiplicative vs. additive effects
+### 30. Cloud seeding: multiplicative vs. additive effects
 
-```{r echo=F}
+```{r}
 ex0330 <- read.csv('ascii/case0301.csv')
 names(ex0330) <- tolower(names(ex0330))
 ```
 
 Adding 100, 200, 300, and 400 to the unseeded rainfalls, and plotting the result:
 
-```{r echo=F}
+```{r}
 us <- with(ex0330, rainfall[ treatment == 'UNSEEDED' ])
 require(reshape2)
 additive <- melt(data.frame(a=us, b=us+100, c=us+200, d=us+300, e=us+400),
@@ -220,7 +241,7 @@ qplot(group, rainfall, data=additive, geom=c('boxplot'))
 
 Multiplying unseeded rainfalls by 2, 3, 4, and 5:
 
-```{r echo=F}
+```{r}
 mult <- melt(data.frame(a=us, b=us*2, c=us*3, d=us*4, e=us*5),
                  variable.name='group',
                  value.name='rainfall')
@@ -229,10 +250,10 @@ qplot(group, rainfall, data=mult, geom=c('boxplot'))
 
 The original data:
 
-```{r echo=F}
+```{r}
 qplot(treatment, rainfall, data=ex0330, geom='boxplot')
 ```
 
 Viewed in the context of these graphs, the effect 'looks' multiplicative.
 
-## 31. TODO
+### 31. TODO

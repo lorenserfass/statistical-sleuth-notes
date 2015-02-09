@@ -1,0 +1,85 @@
+---
+title: 'Chapter 5: Data Problems'
+author: "Loren"
+date: "08/26/2014"
+output:
+   knitrBootstrap::bootstrap_document:
+        title: "Chapter 5: Data Problems"
+        theme: default
+        highlight: xcode
+        theme.chooser: TRUE
+        highlight.chooser: TRUE
+---
+
+
+```{r bootstrap.show.code=FALSE, bootstrap.show.message=FALSE}
+library(knitr)
+opts_chunk$set(bootstrap.show.code=FALSE, bootstrap.thumbnail=FALSE, bootstrap.show.message=FALSE)
+library(ggplot2)
+theme_set(new = theme_minimal())
+library(plyr)
+# upper-case column names annoy me
+sleuth.read <- function(x) {
+   d <- read.csv(x)
+   names(d) <- tolower(names(d))
+   d
+}
+```
+
+
+# Data Problems
+
+## 23. Was T-Rex warm-blooded?
+
+```{r}
+ex0523 <- read.csv('ascii/ex0523.csv')
+names(ex0523) <- tolower(names(ex0523))
+```
+
+Sure look different to me:
+
+```{r}
+ggplot(ex0523, aes(bonegrp, oxygen)) + geom_boxplot() + theme_minimal()
+```
+
+The spreads look pretty different though.
+
+```{r}
+anova(aov(oxygen ~ bonegrp, data=ex0523))
+```
+
+## 24. Zinc and vegetarians (observational)
+
+```{r}
+ex0524 <- read.csv('ascii/ex0524.csv')
+names(ex0524) <- tolower(names(ex0524))
+```
+
+Doesn't look like much evidence:
+
+```{r}
+ggplot(ex0524, aes(group, zinc)) + geom_boxplot()
+```
+
+
+The residuals in the "just control" group are calculated in reference to the mean of the whole
+control group.  So the plot shows that the observations jump around **together** from day to day.
+So the day seems to have an affect on the protein measurement.
+
+The ten groups do not have equal means [shorthand for "we reject the null hypothesis that
+the ten groups have equal means"]:
+
+```{r}
+ex0518 <- sleuth.read('ascii/ex0518.csv')
+six <- aov(protein ~ treatmnt, ex0518)
+ten <- aov(protein ~ trt.daygroup, ex0518)
+anova(ten)
+```
+
+The means of the control group change from day to day:
+(Why are the two p-values different?)
+
+```{r}
+anova(ten, six)
+anova(aov(protein ~ day, data=subset(ex0518, treatmnt=='CONTROL')))
+```

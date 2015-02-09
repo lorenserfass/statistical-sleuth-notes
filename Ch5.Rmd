@@ -3,20 +3,23 @@ title: 'Chapter 5: Comparisons Among Several Samples'
 author: "Loren"
 date: "08/26/2014"
 output:
-   html_document:
-      toc: true
-      theme: spacelab
-      highlight: pygments
+   knitrBootstrap::bootstrap_document:
+        title: "Chapter 5: Comparisons Among Several Samples"
+        theme: default
+        highlight: xcode
+        theme.chooser: TRUE
+        highlight.chooser: TRUE
 ---
-```{r echo=F}
+
+```{r bootstrap.show.code=FALSE, bootstrap.show.message=FALSE}
 library(knitr)
-opts_chunk$set(warning=FALSE, prompt=FALSE, message=FALSE)
+opts_chunk$set(bootstrap.show.code=FALSE, bootstrap.thumbnail=FALSE, bootstrap.show.message=FALSE)
 library(ggplot2)
 theme_set(new = theme_minimal())
 library(plyr)
 ```
 
-```{r echo=F}
+```{r}
 # upper-case column names annoy me
 sleuth.read <- function(x) {
    d <- read.csv(x)
@@ -32,7 +35,7 @@ c0501 <- sleuth.read('ascii/case0501.csv')
 
 ## The Spock Trial
 
-```{r echo=F}
+```{r}
 c0502 <- sleuth.read('ascii/case0502.csv')
 ```
 
@@ -41,6 +44,7 @@ require(ggplot2)
 qplot(judge, percent, data=c0502, geom='boxplot')
 table(c0502$judge)
 ```
+
 
 Some models:
 
@@ -53,10 +57,11 @@ reduced <- aov(percent ~ 1, c0502)
 t.test(percent ~ (judge == "SPOCK'S"), c0502) # same p-value
 ```
 
+
 A permutation test showing what the F-test means:
 
 ```{r}
-n <- 1000
+n <- 100
 f.stats <- numeric(n)
 my.fun <- function(x) { sum((x - mean(x))^2) }
 sst <- my.fun(c0502$percent)           # total sum of squared resids
@@ -74,6 +79,7 @@ x <- seq(from=0,to=6,by=0.01)
 y <- df(x,6,39)
 lines(x,y)
 ```
+
 
 Let me look more closely at the between/within sum of squares...
 
@@ -95,10 +101,12 @@ sst - ssw
 weighted.mean((group.means - grand.mean)^2, group.sizes) * nrow(c0502)
 ```
 
+
 ## Diagnostics using Residuals
 
-```{r echo=F}
+```{r}
 c0501.full <- aov(lifetime ~ diet, data=c0501)
+par(mfrow=c(2,2))
 plot(c0501.full) # not sure how to get separate plots
 df <- data.frame(estimated.means=c0501.full$fitted.values,
                  residuals=c0501.full$residuals)
@@ -106,249 +114,17 @@ df <- data.frame(estimated.means=c0501.full$fitted.values,
 
 Plotting means vs residuals:
 
-```{r echo=F}
+```{r}
 ggplot(df, aes(estimated.means, residuals)) +
    geom_point() + xlab('Estimated Mean Lifetime (months)') +
    ylab('Residual Lifetime (months)') +
    geom_hline(yintercept=0)
 ```
 
+
+
 # Conceptual Exercises
 
 1. 
 2. 
 3. 
-
-# Computational Exercises
-
-## 13. Spock Trial continued
-
-```{r}
-ex0513 <- read.csv('ascii/case0502.csv')
-names(ex0513) <- tolower(names(ex0513))
-```
-
-a) What is the average percentage of women from all venires?
-
-```{r}
-(ave.women <- mean(ex0513$percent))
-```
-
-b) For how many of the 9 Spock judge's venires is the percentage of women less than this grand average?  All 9:
-
-```{r}
-with(ex0513, sum(percent < ave.women & judge == "SPOCK'S"))
-```
-
-c) For how many of the venires of Spock's judge is the percentage of women less than the average percentage for Spock's judge?
-
-```{r}
-sum(with(ex0513[ex0513$judge == "SPOCK'S",], percent < mean(percent)))
-```
-
-## 14. Spock - "by hand" t-test of Spock's judge vs judge A
-
-a) What is the pooled standard deviation?
-
-```{r}
-spocks.percent <- 14.62
-spocks.sd <- 5.039
-spocks.n <- 9
-a.n <- 5
-a.percent <- 34.12
-a.sd <- 11.942
-(sd.pooled <- sqrt(((spocks.n-1)*spocks.sd^2 + (a.n-1)*a.sd^2)/
-                      (spocks.n + a.n - 2)))
-```
-
-b) t-test
-
-```{r}
-df.test <- spocks.n + a.n - 2
-(se <- sd.pooled * sqrt(1/spocks.n + 1/a.n)) # standard error of (a - spock)
-(t <- (0 - (a.percent - spocks.percent)) / se)
-2 * pt(t, df=df.test)
-```
-
-c) Checking against a computer t-test:
-
-```{r}
-ind <- with(ex0513, judge == "SPOCK'S" | judge == "A")
-t.test(percent ~ judge, data=ex0513[ind,], var.equal=T)
-```
-
-## 15. More Spock
-
-a) sample variance
-
-```{r}
-(sv <- var(ex0513$percent))
-```
-
-b) RSS
-
-```{r}
-45 * sv
-with(ex0513, sum((percent - mean(percent))^2) ) # a check
-```
-
-c) TODO
-
-## 16. Spock computer F-test
-
-```{r}
-full <- aov(percent ~ judge, data=ex0513)
-reduced <- aov(percent ~ 1, data=ex0513)
-(model.comparison <- anova(full, reduced))
-```
-
-## 17. An F-test by hand - TODO: do the table in markdown style
-
-<table border="1">
-<tr>
-<th>Source</th><th>df</th><th>Sum of squares</th><th>Mean square</th><th>F-stat</th><th>p-val</th>
-</tr>
-<tr>
-<td>Between Groups</td> <td>7</td>  <td>35819</td> <td>5117</td>  <td>3.5</td>   <td>0.01424</td>
-</tr>
-<tr>
-<td>Within groups</td>  <td>24</td> <td>35088</td> <td>1462</td>
-</tr>
-<tr>
-<td>Total</td>          <td>31</td> <td>70907</td>
-</tr>
-</table>
-
-## 18. Fatty Acid
-
-```{r}
-ex0518 <- read.csv('ascii/ex0518.csv')
-names(ex0518) <- tolower(names(ex0518))
-```
-
-A model assuming six independent groups, and plots of residual vs. day.
-
-```{r}
-six <- aov(protein ~ treatmnt, ex0518)
-plot(six$residuals ~ ex0518$day, main="All treatments", ylab="residuals", xlab="day")
-with(ex0518, plot(six$residuals[ treatmnt != 'CONTROL'] ~ day[treatmnt != 'CONTROL'],
-                  main="The non-control groups", ylab="residuals", xlab="day"))
-with(ex0518, plot(six$residuals[ treatmnt == 'CONTROL'] ~ day[treatmnt == 'CONTROL'],
-                  main="Just the control groups.", ylab="residuals", xlab="day"))
-```
-
-The residuals in the "just control" group are calculated in reference to the mean of the whole
-control group.  So the plot shows that the observations jump around **together** from day to day.
-So the day seems to have an affect on the protein measurement.
-
-The ten groups do not have equal means [shorthand for "we reject the null hypothesis that
-the ten groups have equal means"]:
-
-```{r}
-ten <- aov(protein ~ trt.daygroup, ex0518)
-anova(ten)
-```
-
-The means of the control group change from day to day:
-[Why are the two p-values different?]
-
-```{r}
-anova(ten, six)
-anova(aov(protein ~ day, data=subset(ex0518, treatmnt=='CONTROL')))
-```
-
-## 19. Cavity Size and Use - TODO - don't understand this one
-
-```{r}
-species <- c('mouse', 'pinyon mouse', "Bewick's wren", 'mountain bluebird',
-             'ash-throated flycatcher', 'plain titmouse', 'northern flicker',
-             'western screech owl', 'american kestrel')
-n <- c(127,44,24,41,18,16,11,7,6)
-mn <- c(7.347,7.368,7.418,7.487,7.563,7.568,8.214,8.272,8.297)
-sample.sd <- c(.4979,.4235,.3955,.3183,.3111,.4649,.2963,.3242,.5842)
-ex0519 <- data.frame(species, n, mn, sample.sd)
-```
-
-a) Compute the pooled estimate of variance.
-
-```{r}
-(s2p <- with(ex0519, weighted.mean(sample.sd^2, n - 1))) # see pg. 120-121
-```
-
-b) F-test
-
-```{r}
-extra.df <- (9-1)
-ssw <- with(ex0519, sample.sd^2 %*% (n-1))   # SS within groups
-sst <- 0.4962^2 * (294-1)                # SS total (0.4962 is their given SD)
-ssb <- sst - ssw                       # SS between groups
-f <- (ssb / extra.df) / s2p
-pf(f, df1 = extra.df, df2 = (294-1) - (9-1), lower.tail = F)
-```
-
-c) Verify another way of calculating ssb.
-
-d) Sneaky way of checking whether my answers above were correct: making fake
-data and having R do the F-test.
-
-```{r}
-sneaky.sample <- function(n, desired.sample.mean, desired.sample.sd) {
-   x <- rnorm(n)
-   x <- (x - mean(x)) / sd(x)
-   desired.sample.sd * x + desired.sample.mean
-}
-require(plyr)
-set.seed(5432)
-fake.data <- ddply(ex0519, .(species), transform, sam = sneaky.sample(n, mn, sample.sd))
-anova(aov(sam ~ species, data=fake.data))
-```
-
-## Tufte plot of Spock data
-
-```{r fig.width=5, fig.height=2.5}
-c0502 <- sleuth.read('ascii/case0502.csv')
-ggb <- ggplot_build(ggplot(c0502, aes(judge, percent)) + geom_boxplot())
-ggplot(ggb$data[[1]]) + geom_segment(aes(x=x, y=ymin, xend=x, yend=lower)) +
-   geom_segment(aes(x=x, y=upper, xend=x, yend=ymax)) +
-   geom_point(aes(x=x, y=middle)) + xlab("Judge") + ylab("Percent women") +
-   ggtitle("Tufte 'box' plot of Spock data\n(outliers not included!)") +
-   coord_flip()
-```
-
-
-TODO
-
-# Data Problems
-
-## 23. Was T-Rex warm-blooded?
-
-```{r}
-ex0523 <- read.csv('ascii/ex0523.csv')
-names(ex0523) <- tolower(names(ex0523))
-```
-
-Sure look different to me:
-
-```{r}
-ggplot(ex0523, aes(bonegrp, oxygen)) + geom_boxplot() + theme_minimal()
-```
-
-The spreads look pretty different though.
-
-```{r}
-anova(aov(oxygen ~ bonegrp, data=ex0523))
-```
-
-## 24. Zinc and vegetarians (observational)
-
-```{r}
-ex0524 <- read.csv('ascii/ex0524.csv')
-names(ex0524) <- tolower(names(ex0524))
-```
-
-Doesn't look like much evidence:
-
-```{r echo=F}
-ggplot(ex0524, aes(group, zinc)) + geom_boxplot()
-```
-

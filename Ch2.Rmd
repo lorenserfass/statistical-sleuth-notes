@@ -3,21 +3,21 @@ title: 'Chapter 2: Inference using t-Distributions'
 author: "Loren"
 date: "08/17/2014"
 output:
-   html_document:
-      toc: true
-      theme: flatly
-      highlight: tango
+       knitrBootstrap::bootstrap_document:
+        title: "Chapter 2: Inference using t-Distributions"
+        theme: default
+        highlight: xcode
+        theme.chooser: TRUE
+        highlight.chooser: TRUE
 ---
 
-```{r echo=F}
+```{r bootstrap.show.code=FALSE, bootstrap.show.message=FALSE}
 library(knitr)
-opts_chunk$set(warning=FALSE, prompt=FALSE, message=FALSE)
+opts_chunk$set(bootstrap.show.code=FALSE, bootstrap.thumbnail=FALSE, bootstrap.show.message=FALSE)
 library(ggplot2)
 theme_set(new = theme_minimal())
 library(plyr)
-```
-
-```{r echo=F}
+library(reshape2)
 # upper-case column names annoy me
 sleuth.read <- function(x) {
    d <- read.csv(x)
@@ -26,54 +26,58 @@ sleuth.read <- function(x) {
 }
 ```
 
+# Chapter 2: Inference using t-Distributions
+
 ## Bumpus sparrows
-```{r echo=F}
-case0201 <- read.csv('ascii/case0201.csv')
-library(ggplot2)
-```
 
-`r nrow(case0201)` sparrows were collected after a storm.
-Some perished and some survived.
-(Don't ask me how the survivors were collected).
-The length of each bird's HUMERUS was measured.
-```{r echo=F, fig.width=6, fig.height=2}
-table(case0201$STATUS)
-# require(aplpack)
-# with(case0201, stem.leaf.backback(HUMERUS[STATUS=='SURVIVED'],
-#                                  HUMERUS[STATUS=='PERISHED'], 1))
-qplot(STATUS, HUMERUS, data=case0201, geom="boxplot") + coord_flip()
-```
-
-The two groups have about the same spread.
 ```{r}
-(bt <- t.test(HUMERUS ~ STATUS, data=case0201))
+case0201 <- sleuth.read('ascii/case0201.csv') # read the data
 ```
-No convincing evidence of a difference (p.val = `r bt$p.value`), and removing the outliers
-would not increase the significance either.
 
-## Schizophrenic Identical Twins
-```{r echo=F}
+`r nrow(case0201)` live, stressed sparrows were collected after a storm.
+Some survived and some died soon after.
+(Don't ask me how they were collected).
+Here is the number of birds in each condition:
+```{r}
+table(case0201$status)
+```
+
+The length of each bird's humerus was measured.
+```{r fig.width=6, fig.height=2}
+qplot(status, humerus, data=case0201, geom="boxplot") + coord_flip()
+```
+
+The two groups have about the same spread. Here is a t-test for
+difference between group means, assuming equal variances:
+
+```{r}
+(bt <- t.test(humerus ~ status, data=case0201, var.equal=T))
+```
+
+There is no convincing evidence of a difference (p.val = `r bt$p.value`),
+and removing the outliers would not increase the significance either.
+
+## Schizophrenia in Identical Twins
+
+```{r}
 case0202 <- read.csv('ascii/case0202.csv')
 ```
-We have `r nrow(case0202)` pairs of identical twins.  In each pair, one twin
-is affected by schizophrenia and the other is not.
 
-```{r echo=F}
-# unnecessary:
-require(reshape2)
-case0202$twinnum <- 1:nrow(case0202)
-long <- melt(case0202, id.vars='twinnum',
-             variable_name = 'status',
-             value.name = 'volume')
-```
-In almost all pairs, the the unaffected twin has higher volume:
-```{r echo=F}
+The researchers found `r nrow(case0202)` pairs of identical twins, in
+which one twin was affected by schizophrenia and the other was not.
+
+The volume of a certain brain part (?) was measured in each twin.
+
+In almost all pairs, the unaffected twin had higher volume:
+```{r}
 qplot(UNAFFECT - AFFECTED, data=case0202, binwidth=.125)
 ```
+
+Here is a paired t-test:
 ```{r}
 (test <- with(case0202, t.test(UNAFFECT, AFFECTED, paired=T)))
 ```
-We have a significant difference (p-val = `r test$p.value`) in brain volume,
+There is a significant difference (p-val = `r test$p.value`) in brain volume,
 with an average difference of `r test$estimate`.  The 95% confidence interval
 for the difference is `r test$conf.int[1]` to `r test$conf.int[2]`.
 
@@ -109,11 +113,11 @@ c) 2-sided p-value for null hypothesis:
 ```
 
 ## 13. Fish Oil and Blood Pressure
-```{r echo=F}
+```{r}
 ex0213 <- read.csv('ascii/ex0112.csv')
 ```
 a) Group averages of BP:
-```{r echo=F}
+```{r}
 (aves <- with(ex0213, by(BP, DIET, FUN=mean)))
 ```
 b) pooled estimate of standard deviation:
@@ -134,37 +138,37 @@ e)
 
 ## 21. Bumpus sparrow weight
 
-```{r echo=F}
-ex0221 <- read.csv('ascii/ex0221.csv')
+```{r}
+ex0221 <- sleuth.read('ascii/ex0221.csv')
 ```
 We have the weights of `r nrow(ex0221)` sparrows, and whether they survived or not:
-```{r echo=F}
+```{r}
 head(ex0221)
 ```
 Group sizes, boxplot, and t-test:
-```{r echo=F}
-summary(ex0221$STATUS)
-qplot(STATUS, WEIGHT, data=ex0221, geom='boxplot') + geom_point()
-t.test(WEIGHT ~ STATUS, data=ex0221)
+```{r}
+summary(ex0221$status)
+qplot(status, weight, data=ex0221, geom='boxplot') + geom_point()
+t.test(weight ~status, data=ex0221)
 ```
 T-test without "outlier":
-```{r echo=F}
-heaviest <- which.max(ex0221$WEIGHT)
-t.test(WEIGHT ~ STATUS, data=ex0221[-heaviest,])
+```{r}
+heaviest <- which.max(ex0221$weight)
+t.test(weight ~status, data=ex0221[-heaviest,])
 ```
 Whether the difference is "significant" (at the 0.05 level) depends on that
 one data point, so it would be a very weak conclusion.
 
 ## 23. Speed limits and traffic fatalities
-```{r echo=F}
+```{r}
 ex0223 <- read.csv('ascii/ex0223.csv')
 ```
 For each state, we have whether it raised its speed limit (over 55) in 1996,
 and the percentage change in traffic fatalities from 1995 to 1996.
-```{r echo=F}
+```{r}
 head(ex0223)
 ```
-```{r echo=F}
+```{r}
 (table(ex0223$INCREASE))
 qplot(FATALITIESCHANGE, data=ex0223, binwidth=10) + facet_grid(facets=INCREASE ~ .)
 ```
@@ -172,7 +176,7 @@ qplot(FATALITIESCHANGE, data=ex0223, binwidth=10) + facet_grid(facets=INCREASE ~
 So, we have most of the states increasing their speed limit, and
 the change in fatalities in seems to be higher among states that increased their
 speed limit.  Yes, we have a significant t-test:
-```{r echo=F}
+```{r}
 (tt <- t.test(FATALITIESCHANGE ~ INCREASE, data=ex0223))
 ```
 The confidence interval is (`r tt$conf.int`).
