@@ -65,6 +65,9 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 # opts_chunk$set(bootstrap.show.code=FALSE, bootstrap.thumbnail=FALSE, bootstrap.show.message=FALSE)
 library(ggplot2)
 theme_set(new = theme_minimal())
+#use color brewer as default discrete colors
+scale_colour_discrete &lt;- function(...) scale_color_brewer(palette=&quot;Set1&quot;, ...)
+scale_fill_discrete &lt;- function(...) scale_fill_brewer(palette=&quot;Set1&quot;, ...)
 library(plyr)
 # upper-case column names annoy me
 sleuth.read &lt;- function(x) {

@@ -1,0 +1,122 @@
+
+## 19. Cavity Size and Use - TODO - don't understand this one
+
+```{r}
+species <- c('mouse', 'pinyon mouse', "Bewick's wren", 'mountain bluebird',
+             'ash-throated flycatcher', 'plain titmouse', 'northern flicker',
+             'western screech owl', 'american kestrel')
+n <- c(127,44,24,41,18,16,11,7,6)
+mn <- c(7.347,7.368,7.418,7.487,7.563,7.568,8.214,8.272,8.297)
+sample.sd <- c(.4979,.4235,.3955,.3183,.3111,.4649,.2963,.3242,.5842)
+ex0519 <- data.frame(species, n, mn, sample.sd)
+```
+
+a) Compute the pooled estimate of variance.
+
+```{r}
+(s2p <- with(ex0519, weighted.mean(sample.sd^2, n - 1))) # see pg. 120-121
+```
+
+
+
+b) F-test
+
+```{r}
+extra.df <- (9-1)
+ssw <- with(ex0519, sample.sd^2 %*% (n-1))   # SS within groups
+sst <- 0.4962^2 * (294-1)                # SS total (0.4962 is their given SD)
+ssb <- sst - ssw                       # SS between groups
+f <- (ssb / extra.df) / s2p
+pf(f, df1 = extra.df, df2 = (294-1) - (9-1), lower.tail = F)
+```
+
+
+
+
+c) Verify another way of calculating ssb.
+
+d) Sneaky way of checking whether my answers above were correct: making fake
+data and having R do the F-test.
+
+```{r}
+sneaky.sample <- function(n, desired.sample.mean, desired.sample.sd) {
+   x <- rnorm(n)
+   x <- (x - mean(x)) / sd(x)
+   desired.sample.sd * x + desired.sample.mean
+}
+require(plyr)
+set.seed(5432)
+fake.data <- ddply(ex0519, .(species), transform, sam = sneaky.sample(n, mn, sample.sd))
+anova(aov(sam ~ species, data=fake.data))
+```
+
+## Tufte plot of Spock data
+
+```{r fig.width=5, fig.height=2.5}
+c0502 <- sleuth.read('ascii/case0502.csv')
+ggb <- ggplot_build(ggplot(c0502, aes(judge, percent)) + geom_boxplot())
+ggplot(ggb$data[[1]]) + geom_segment(aes(x=x, y=ymin, xend=x, yend=lower)) +
+   geom_segment(aes(x=x, y=upper, xend=x, yend=ymax)) +
+   geom_point(aes(x=x, y=middle)) + xlab("Judge") + ylab("Percent women") +
+   ggtitle("Tufte 'box' plot of Spock data\n(outliers not included!)") +
+   coord_flip()
+```
+
+
+TODO
+
+# Data Problems
+
+## 23. Was T-Rex warm-blooded?
+
+```{r}
+ex0523 <- read.csv('ascii/ex0523.csv')
+names(ex0523) <- tolower(names(ex0523))
+```
+
+Sure look different to me:
+
+```{r}
+ggplot(ex0523, aes(bonegrp, oxygen)) + geom_boxplot() + theme_minimal()
+```
+
+The spreads look pretty different though.
+
+```{r}
+anova(aov(oxygen ~ bonegrp, data=ex0523))
+```
+
+## 24. Zinc and vegetarians (observational)
+
+```{r}
+ex0524 <- read.csv('ascii/ex0524.csv')
+names(ex0524) <- tolower(names(ex0524))
+```
+
+Doesn't look like much evidence:
+
+```{r}
+ggplot(ex0524, aes(group, zinc)) + geom_boxplot()
+```
+
+
+The residuals in the "just control" group are calculated in reference to the mean of the whole
+control group.  So the plot shows that the observations jump around **together** from day to day.
+So the day seems to have an affect on the protein measurement.
+
+The ten groups do not have equal means [shorthand for "we reject the null hypothesis that
+the ten groups have equal means"]:
+
+```{r}
+ten <- aov(protein ~ trt.daygroup, ex0518)
+anova(ten)
+```
+
+The means of the control group change from day to day:
+[Why are the two p-values different?]
+
+```{r}
+anova(ten, six)
+anova(aov(protein ~ day, data=subset(ex0518, treatmnt=='CONTROL')))
+```
+

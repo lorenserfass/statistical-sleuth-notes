@@ -17,17 +17,20 @@ opts_chunk$set(bootstrap.show.code=FALSE, bootstrap.thumbnail=FALSE, bootstrap.s
 library(ggplot2)
 theme_set(new = theme_minimal())
 library(plyr)
-```
-
-```{r}
 # upper-case column names annoy me
 sleuth.read <- function(x) {
    d <- read.csv(x)
    names(d) <- tolower(names(d))
    d
 }
+```
+
+# Chapter 5: Comparisons among several samples
+
+# Examples
 
 ## Mice Diet and Longevity
+
 ```{r}
 c0501 <- sleuth.read('ascii/case0501.csv')
 ```
@@ -123,7 +126,7 @@ ggplot(df, aes(estimated.means, residuals)) +
 
 
 
-# Conceptual Exercises
+## Conceptual Exercises
 
 1. 
 2. 

@@ -1,0 +1,43 @@
+---
+title: "blah"
+author: "Loren Serfass"
+date: "02/10/2015"
+output:
+   knitrBootstrap::bootstrap_document:
+        title: "Chapter 2: Inference using t-Distributions"
+        theme: default
+        highlight: xcode
+        theme.chooser: TRUE
+        highlight.chooser: TRUE
+---
+
+```{r bootstrap.show.code=FALSE, bootstrap.show.message=FALSE}
+library(knitr)
+opts_chunk$set(bootstrap.show.code=FALSE, bootstrap.thumbnail=FALSE, bootstrap.show.message=FALSE)
+library(ggplot2)
+theme_set(new = theme_minimal())
+library(plyr)
+library(reshape2)
+# upper-case column names annoy me
+sleuth.read <- function(x) {
+   d <- read.csv(x)
+   names(d) <- tolower(names(d))
+   d
+}
+```
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+summary(cars)
+```
+
+You can also embed plots, for example:
+
+```{r, echo=FALSE}
+plot(cars)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

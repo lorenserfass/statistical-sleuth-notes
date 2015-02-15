@@ -15,7 +15,11 @@ output:
 library(knitr)
 opts_chunk$set(bootstrap.show.code=FALSE, bootstrap.thumbnail=FALSE, bootstrap.show.message=FALSE)
 library(ggplot2)
+library(gridExtra)
 theme_set(new = theme_minimal())
+#use color brewer as default discrete colors
+scale_colour_discrete <- function(...) scale_color_brewer(palette="Set1", ...)
+scale_fill_discrete <- function(...) scale_fill_brewer(palette="Set1", ...)
 library(plyr)
 library(reshape2)
 # upper-case column names annoy me
@@ -138,7 +142,7 @@ TODO: continue this.
 
 ```{r}
 ggplot(ex0321, aes(expected, lifelength, color=factor(censored))) + geom_point(alpha=0.5) +
-   geom_abline(intercept=0,slope=1) + theme_minimal()
+   geom_abline(intercept=0,slope=1)
 ```
 
 
@@ -163,20 +167,20 @@ a) TODO
 b) In the following plot, high-sunspot years are almost all above the regression line. Low-sunspot years are almost all below the line.  There is an upward trend in both groups.  Does this mean that the observations aren't independent?  Would this make the test sensitive to the choice of what years to start and end at?
 
 ```{r fig.width=4, fig.height=3}
-ggplot(ex0323, aes(year, rate)) + geom_point(aes(color=sunspot)) + geom_smooth(method='lm',se=F,color='black') + theme_minimal()
+ggplot(ex0323, aes(year, rate)) + geom_point(aes(color=sunspot)) + geom_smooth(method='lm',se=F,color='black')
 ```
 
 ### 24. Sex Discrimination revisited with logs
 
 The data don't look skewed, so I'm not sure why they're having me do this.
 
-```{r}
+```{r fig.width=9, fig.height=3}
 ex0324 <- sleuth.read('ascii/case0102.csv')
-ggplot(ex0324, aes(sex, salary)) + geom_boxplot() + ggtitle("Salary not log-transformed")
-```
-
-```{r}
-ggplot(ex0324, aes(sex, log(salary))) + geom_boxplot() + ggtitle("Salary log-transformed")
+grid.arrange(
+   ggplot(ex0324, aes(sex, salary)) + geom_boxplot() + ggtitle("Salary not log-transformed"),
+   ggplot(ex0324, aes(sex, log(salary))) + geom_boxplot() + ggtitle("Salary log-transformed"),
+   ncol=2
+)
 ```
 
 ```{r}
@@ -224,34 +228,26 @@ is (`r exp(t$conf.int)`).  That's median(other)/median(vietnam).
 ### 30. Cloud seeding: multiplicative vs. additive effects
 
 ```{r}
-ex0330 <- read.csv('ascii/case0301.csv')
-names(ex0330) <- tolower(names(ex0330))
+ex0330 <- sleuth.read('ascii/case0301.csv')
 ```
 
 Adding 100, 200, 300, and 400 to the unseeded rainfalls, and plotting the result:
 
-```{r}
+```{r fig.width=10, fig.height=3}
 us <- with(ex0330, rainfall[ treatment == 'UNSEEDED' ])
 require(reshape2)
 additive <- melt(data.frame(a=us, b=us+100, c=us+200, d=us+300, e=us+400),
                  variable.name='group',
                  value.name='rainfall')
-qplot(group, rainfall, data=additive, geom=c('boxplot'))
-```
-
-Multiplying unseeded rainfalls by 2, 3, 4, and 5:
-
-```{r}
+p1 <- qplot(group, rainfall, data=additive, geom=c('boxplot'),
+            main="Adding 100, 200, 300, 400 to\nunseeded rainfalls")
 mult <- melt(data.frame(a=us, b=us*2, c=us*3, d=us*4, e=us*5),
                  variable.name='group',
                  value.name='rainfall')
-qplot(group, rainfall, data=mult, geom=c('boxplot'))
-```
-
-The original data:
-
-```{r}
-qplot(treatment, rainfall, data=ex0330, geom='boxplot')
+p2 <- qplot(group, rainfall, data=mult, geom=c('boxplot'),
+            main="Multiplying unseed rainfalls\nby 100, 200, 300, 400")
+p3 <- qplot(treatment, rainfall, data=ex0330, geom='boxplot', main="original data")
+grid.arrange(p1, p3, p2, ncol=3)
 ```
 
 Viewed in the context of these graphs, the effect 'looks' multiplicative.

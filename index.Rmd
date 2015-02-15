@@ -16,3 +16,5 @@ Links to chapters:
 * [Chapter 5: Data Problems](Ch5_DataProblems.html)
 * [Chapter 6: Linear Combinations and Multiple Comparisons of Means](Ch6.html)
 * [Chapter 7: Simple Linear Regression: A Model for the Mean](Ch7.html)
+* [Chapter 8: A Closer Look at Assumptions for Simple Linear Regression](Ch8.html)
+* [Chapter 9: Multiple Regression](Ch9.html)

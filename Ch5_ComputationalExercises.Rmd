@@ -18,6 +18,9 @@ library(knitr)
 # opts_chunk$set(bootstrap.show.code=FALSE, bootstrap.thumbnail=FALSE, bootstrap.show.message=FALSE)
 library(ggplot2)
 theme_set(new = theme_minimal())
+#use color brewer as default discrete colors
+scale_colour_discrete <- function(...) scale_color_brewer(palette="Set1", ...)
+scale_fill_discrete <- function(...) scale_fill_brewer(palette="Set1", ...)
 library(plyr)
 # upper-case column names annoy me
 sleuth.read <- function(x) {

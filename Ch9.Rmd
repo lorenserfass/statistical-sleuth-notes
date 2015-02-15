@@ -1,0 +1,67 @@
+---
+title: 'Chapter 9: Multiple Regression'
+author: "Loren Serfass"
+date: "02/12/2015"
+output:
+   knitrBootstrap::bootstrap_document:
+        title: "Chapter 9: Multiple Regression"
+        theme: default
+        highlight: xcode
+        theme.chooser: TRUE
+        highlight.chooser: TRUE
+---
+
+# Chapter 9: Multiple Regression
+
+```{r bootstrap.show.code=FALSE, bootstrap.show.message=FALSE}
+# set up the document
+library(knitr)
+opts_chunk$set(bootstrap.show.code=FALSE, bootstrap.thumbnail=FALSE, bootstrap.show.message=FALSE)
+library(ggplot2)
+theme_set(new = theme_minimal())
+#use color brewer as default discrete colors
+scale_colour_discrete <- function(...) scale_color_brewer(palette="Set1", ...)
+scale_fill_discrete <- function(...) scale_fill_brewer(palette="Set1", ...)
+library(plyr)
+sleuth.read <- function(x) {
+   d <- read.csv(x)
+   names(d) <- tolower(names(d))
+   d
+}
+```
+
+# This chapter's examples
+
+## Effects of light on meadowfoam flowering
+
+```{r fig.width=5, fig.height=5}
+case0901 <- sleuth.read('ascii/case0901.csv')
+case0901$time <- as.factor(case0901$time)
+mod1 <- lm(flowers ~ intens + time, data=case0901)
+pred <- case0901
+pred$flowers <- predict(mod1, case0901)
+ggplot(case0901, aes(intens, flowers, color=time)) + scale_x_continuous(breaks=unique(case0901$intens)) +
+   geom_point() + geom_line(data=pred)
+```
+
+## Why do some mammals have large brains for their size? an observational study
+
+All variables seem skewed, except for maybe litter sizes.
+
+```{r}
+case0902 <- sleuth.read('ascii/case0902.csv')
+case0902$species <- as.character(case0902$species)
+pairs(case0902[,-1], lower.panel = {})
+```
+
+The following is a pairwise plot of the log-transformed variables.
+
+```{r}
+pairs(log(case0902[,-1]), lower.panel = {})
+```
+
+```{r}
+mod <- lm(log(brain) ~ log(body) + log(gestation) + log(litter) - 1, data=case0902)
+ggplot(case0902, aes(body, gestation, size=log(brain))) + geom_point() + scale_x_log10() + scale_y_log10()
+```
+
