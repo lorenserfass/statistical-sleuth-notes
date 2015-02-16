@@ -17,6 +17,7 @@ output:
 library(knitr)
 opts_chunk$set(bootstrap.show.code=FALSE, bootstrap.thumbnail=FALSE, bootstrap.show.message=FALSE)
 library(ggplot2)
+library(gridExtra)
 theme_set(new = theme_minimal())
 #use color brewer as default discrete colors
 scale_colour_discrete <- function(...) scale_color_brewer(palette="Set1", ...)
@@ -40,30 +41,37 @@ of 7 islands in the West Indies. Here is the whole dataset:
 (case0801 <- sleuth.read('ascii/case0801.csv'))
 ```
 
-Plotting the variables directly does not result in a straight line.
+The data does not lie close to a straight line, but it does if both variables are log-transformed.
 
-```{r fig.width=3, fig.height=3}
-qplot(area, species, data=case0801)
-```
-
-The log-log plot is very close to a straight line though.
-
-```{r fig.width=3, fig.height=3}
-qplot(log(area), log(species), data=case0801) + geom_smooth(method='lm')
+```{r fig.width=8, fig.height=4}
+grid.arrange(
+   qplot(area, species, data=case0801),
+   qplot(log(area), log(species), data=case0801) + geom_smooth(method='lm'),
+   ncol=2
+)
 ```
 
 ## Breakdown times for insulating fluid under different voltages
 
 Here, logging the y scale results in a fairly linear relationship.
 
-```{r}
+```{r fig.width=10, fig.height=5}
 case0802 <- sleuth.read('ascii/case0802.csv')
+xbreaks <- seq(26,38,by=2)
+p1 <- qplot(voltage, time, data=case0802) +
+   scale_x_continuous(breaks=xbreaks) + ggtitle("Breakdown times") + ylab("Time (in minutes)")
 ybreaks <- array((1:9) %*% t(10^(0:3)))
 ylabs <- character(36)
 ylabs[seq(1,by=9,length=4)] <- 10^(0:3)
-qplot(voltage, time, data=case0802) + scale_y_log10(breaks=ybreaks, labels=ylabs) +
-   geom_smooth(method='lm') +
-   scale_x_continuous(breaks=seq(26,38,by=2)) + ggtitle("Breakdown times") + ylab("Time (in minutes)")
+group.means <- setNames(aggregate(log(time) ~ as.factor(voltage), data=case0802, mean), c('voltage', 'mean.log.time'))
+p2 <- p1 + scale_y_log10(breaks=ybreaks, labels=ylabs) + geom_smooth(method='lm') +
+   ggtitle("Breakdown times (log scale)") +
+   geom_point(aes(as.numeric(levels(voltage)), exp(mean.log.time)),
+              data=group.means,col='red',alpha=0.5,shape="+",size=10)
+grid.arrange(p1, p2, ncol=2)
+# qplot(voltage, time, data=case0802) + scale_y_log10(breaks=ybreaks, labels=ylabs) +
+   # geom_smooth(method='lm') +
+   # scale_x_continuous(breaks=xbreaks) + ggtitle("Breakdown times") + ylab("Time (in minutes)")
 ```
 
 # Chapter notes
@@ -129,10 +137,54 @@ lines(case0802$voltage, (sqrt.model$fitted.values^2)*ifelse(sqrt.model$fitted.va
 lines(case0802$voltage, exp(log.model$fitted.values), col='blue')
 ```
 
-## Interpretationg after log transformations
+## Interpretation after log transformations
 
 When only Y is logged: *use medians*. When X increases by 1, Y's median is multiplied.
 
 When X is logged: a [doubling of] X is associated with adding a constant amount to Y.
 
 When both X and Y are logged: a [doubling of X] is associated with multiplying Y's median by a constant factor.
+
+
+## Assessment of fit using ANOVA
+
+This section compares three models for `log(voltage)`: a "separate means" model (most freedom -
+each group has its own mean), a linear model (group means are different but all fall on a straight
+line), and an equal means model.
+
+
+
+Two ANOVAs are given. Here is a comparison of `separate.means` with `equal.means`:
+
+```{r}
+separate.means <- lm(log(time) ~ as.factor(voltage), data=case0802) # greatest freedom
+linear.model <- lm(log(time) ~ voltage, data=case0802)
+equal.means <- lm(log(time) ~ 1, data=case0802)
+# ANOVA:
+anova(separate.means, equal.means)
+```
+
+And here is a comparison of `linear.model` with `equal.means`:
+
+```{r}
+anova(linear.model, equal.means)
+```
+
+The third comparison, between `separate.means` and `linear.model`, is called a **Lack-of-Fit F-Test**.
+It tests the adequacy of the straight-line model.
+
+```{r}
+(blah <- anova(separate.means, linear.model))
+```
+
+The p-value is `r blah$'Pr(>F)'`, and the interpretation is that there is no evidence of lack-of-fit
+in the linear model.
+
+```{r}
+anova(separate.means, linear.model, equal.means)
+```
+
+# Conceptual Exercises
+
+1.
+$$\mu$$
