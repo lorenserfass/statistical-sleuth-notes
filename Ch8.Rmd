@@ -188,3 +188,15 @@ anova(separate.means, linear.model, equal.means)
 
 1.
 $$\mu$$
+
+
+```{r}
+food <- c('mushrooms','tomatoes','broccoli', 'dry beans', 'peanuts', 'eggs','chicken', 'turkey',
+          'lentils','tofu','cheese','nuts, almonds','beef','pork')
+water <- c(1,4,5,161,166,178,229,229,235,242,290,321,390,450)
+type <- c(1,1,1,1,1,2,2,2,1,1,2,1,2,2)
+type <- factor(ifelse(type == 1, 'plant', 'animal'))
+df <- data.frame(food,water,type)
+ggplot(df, aes(food, water, fill=type)) + geom_bar(stat='identity') + scale_x_discrete(limits=df$food) + coord_flip() #  + theme(axis.text.x=element_text(angle=90))
+```
+
